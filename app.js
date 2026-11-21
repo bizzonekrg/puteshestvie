@@ -202,9 +202,7 @@ async function showHome(profile) {
   // персонажи игрока
   let charBlock;
   if (profile.role === 'master') {
-    charBlock = el('div', { class: 'card' },
-      el('div', { class: 'title' }, 'Группы'),
-      el('p', { class: 'muted' }, 'Вход в группу как ведущий появится на следующем шаге сборки сайта.'));
+    charBlock = await masterGroupsBlock(profile);
   } else {
     const { data: chars, error: chErr } = await sb.from('characters')
       .select('id, name, class_name, level')
@@ -220,6 +218,7 @@ async function showHome(profile) {
         el('span', { class: 'gold' }, 'Открыть'))),
       (!chErr && (!chars || !chars.length)) ? el('p', { class: 'muted' }, 'Персонажей пока нет. Загрузите первого.') : null,
       el('button', { class: 'btn', type: 'button', onclick: () => showUpload(profile) }, 'Загрузить персонажа'),
+      await playerGroupsBlock(profile),
     ];
   }
 

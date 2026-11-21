@@ -335,7 +335,7 @@ function showReview(profile, parsed) {
 
 let CH = null; // открытый персонаж: { profile, id, sheet, tab, open, saveState, timer, badge }
 
-async function openCharacter(profile, id, tab) {
+async function openCharacter(profile, id, tab, back) {
   show(false, el('p', { class: 'muted center' }, 'Загрузка…'));
   const { data, error } = await sb.from('characters').select('id, owner_id, sheet').eq('id', id).maybeSingle();
   if (error || !data || !data.sheet || !data.sheet.stats) {
@@ -349,7 +349,7 @@ async function openCharacter(profile, id, tab) {
   s.weapons = s.weapons || []; s.items = s.items || []; s.spells = s.spells || []; s.features = s.features || [];
   s.skills = s.skills || []; s.saves = s.saves || {}; s.spell = s.spell || { dc: 10, atk: 0, slots: [] };
   s.spell.slots = s.spell.slots || [];
-  CH = { profile, id: data.id, own: data.owner_id === profile.id, sheet: s, tab: tab || 'main', open: new Set(), saveState: 'saved', timer: null, badge: null };
+  CH = { profile, id: data.id, own: data.owner_id === profile.id, sheet: s, tab: tab || 'main', open: new Set(), saveState: 'saved', timer: null, badge: null, back: back || null, group: undefined };
   renderChar();
 }
 
@@ -381,8 +381,9 @@ function changed() {
 
 async function leaveCharacter() {
   if (CH && CH.timer) await saveNow();
+  const back = CH && CH.back;
   CH = null;
-  route();
+  if (back) back(); else route();
 }
 
 function skillBonus(s, sk) { return modOf(s.stats[sk.stat]) + s.prof * (sk.prof || 0); }
@@ -415,7 +416,7 @@ function renderChar() {
   if (c.tab === 'main') body = tabMain(s, ro, editBtn);
   else if (c.tab === 'items') body = tabItems(s, ro, editBtn);
   else if (c.tab === 'magic') body = tabMagic(s, ro, editBtn);
-  else body = [el('div', { class: 'card' }, el('div', { class: 'title' }, 'Группа'), el('p', { class: 'muted' }, 'Группы появятся на следующем шаге сборки сайта.'))];
+  else body = tabGroup(c, ro);
 
   const tab = (key, label) => el('button', { type: 'button', 'aria-current': c.tab === key ? 'page' : null, onclick: () => { c.tab = key; renderChar(); window.scrollTo(0, 0); } }, label);
   const nav = el('nav', { class: 'tabs', 'aria-label': 'Разделы' }, tab('main', 'Персонаж'), tab('items', 'Вещи'), tab('magic', 'Магия'), tab('group', 'Группа'));
@@ -677,4 +678,35 @@ function tabMagic(s, ro, editBtn) {
       } }, 'Долгий отдых')));
 
   return [head, slots.length ? slots : el('p', { class: 'muted' }, 'Ячеек заклинаний нет.'), spellBlocks, features, rests];
+}
+
+// Вкладка «Группа»: в какой группе этот персонаж
+function tabGroup(c, ro) {
+  if (ro) return [el('div', { class: 'card' }, el('p', { class: 'muted' }, 'Это персонаж другого игрока. Вернитесь к группе кнопкой «Назад».'))];
+  if (c.group === undefined) {
+    c.group = null;
+    c.groupLoading = true;
+    loadMyGroups().then(({ groups, error }) => {
+      if (CH !== c) return;
+      c.groupLoading = false;
+      c.groupError = !!error;
+      c.group = (groups || []).find((g) => g.character_id === c.id) || null;
+      if (c.tab === 'group') renderChar();
+    });
+  }
+  if (c.groupLoading) return [el('p', { class: 'muted center' }, 'Загрузка…')];
+  if (c.groupError) return [el('p', { class: 'error' }, 'Не удалось загрузить группу. Проверьте интернет.')];
+  const go = async (fn) => { if (c.timer) await saveNow(); CH = null; fn(); };
+  if (c.group) {
+    const g = c.group;
+    return [el('div', { class: 'card' },
+      el('div', { class: 'label' }, 'Персонаж состоит в группе'),
+      el('div', { class: 'title' }, g.name),
+      el('p', { class: 'muted' }, `Предводитель: ${g.leader_name || '—'} · игроков: ${g.members}`),
+      el('button', { class: 'btn', type: 'button', onclick: () => go(() => showGroup(c.profile, g.id)) }, 'Открыть группу'))];
+  }
+  return [el('div', { class: 'card' },
+    el('div', { class: 'title' }, 'Группа'),
+    el('p', { class: 'muted' }, 'Этот персонаж пока не в группе.'),
+    el('button', { class: 'btn', type: 'button', onclick: () => go(() => showGroups(c.profile)) }, 'Вступить или создать группу'))];
 }
