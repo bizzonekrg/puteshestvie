@@ -558,7 +558,7 @@ function tabItems(s, ro, editBtn) {
     s.items.length ? null : el('p', { class: 'muted' }, 'Предметов пока нет.'),
     s.items.map((it) => el('div', { class: 'card rowcard slim' },
       el('div', { class: 'grow' }, it.name),
-      el('span', { class: 'muted' }, `${it.qty} шт.`),
+      el('span', { class: 'muted nowrap' }, `${it.qty} шт.`),
       editBtn('Изм.', () => itemForm(it, false)))),
     ro ? null : el('button', { class: 'btn dashed', type: 'button', onclick: () => itemForm({ name: '', qty: 1 }, true) }, '+ Добавить предмет'),
   ];
@@ -597,10 +597,11 @@ function tabMagic(s, ro, editBtn) {
 
   const slots = sp.slots.map((sl) => {
     const left = sl.max - sl.used;
-    return el('div', { class: 'card rowcard' },
-      el('div', { class: 'grow' }, el('div', { class: 'title' }, `Ячейки ${sl.level} ур.`), el('p', { class: 'muted' }, `Осталось ${left} из ${sl.max}`)),
-      ro ? null : el('button', { class: 'mini', type: 'button', disabled: sl.used <= 0, onclick: () => { sl.used = Math.max(0, sl.used - 1); changed(); } }, 'Вернуть'),
-      ro ? null : el('button', { class: 'mini solid', type: 'button', disabled: left <= 0, onclick: () => { sl.used = Math.min(sl.max, sl.used + 1); changed(); } }, 'Потратить'));
+    return el('div', { class: 'card' },
+      el('div', { class: 'cardhead' }, el('div', { class: 'title' }, `Ячейки ${sl.level} ур.`), el('p', { class: 'muted nowrap' }, `Осталось ${left} из ${sl.max}`)),
+      ro ? null : el('div', { class: 'grid2' },
+        el('button', { class: 'mini', type: 'button', disabled: sl.used <= 0, onclick: () => { sl.used = Math.max(0, sl.used - 1); changed(); } }, 'Вернуть'),
+        el('button', { class: 'mini solid', type: 'button', disabled: left <= 0, onclick: () => { sl.used = Math.min(sl.max, sl.used + 1); changed(); } }, 'Потратить')));
   });
 
   const spellForm = (x, isNew) => openForm({

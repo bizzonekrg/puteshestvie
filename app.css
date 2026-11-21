@@ -248,3 +248,10 @@ textarea {
 }
 .modal .title { font-family: Philosopher, Georgia, serif; font-size: 22px; }
 .modal input[type="text"] { background: var(--card); }
+
+/* правки по скринам с телефона */
+.nowrap { white-space: nowrap; flex: 0 0 auto; }
+.chead h1.small { font-size: 22px; overflow-wrap: anywhere; }
+.tabs { padding-left: 8px; padding-right: 8px; gap: 4px; }
+.tabs button { font-size: 12px; padding: 0 2px; white-space: nowrap; }
+.rowcard .grow { overflow-wrap: anywhere; }
