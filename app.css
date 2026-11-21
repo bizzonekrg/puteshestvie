@@ -154,7 +154,7 @@ h2 { margin: 6px 0 0; font-family: Philosopher, Georgia, serif; font-size: 20px;
 .badge.bad { color: var(--danger); }
 
 .chead { display: flex; align-items: center; gap: 12px; }
-.chead .muted { font-size: 14px; }
+.cheadwrap { display: flex; flex-direction: column; gap: 8px; }
 .portrait { flex: 0 0 auto; width: 72px; height: 72px; border-radius: 16px; object-fit: cover; background: var(--card); }
 .chip { flex: 0 0 auto; padding: 6px 12px; border-radius: 999px; background: var(--gold); color: var(--gold-ink); font-size: 13px; font-weight: 700; }
 

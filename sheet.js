@@ -535,12 +535,12 @@ function renderChar() {
     portrait = el('img', { class: 'portrait', src: s.portrait, alt: 'Портрет персонажа', referrerpolicy: 'no-referrer' });
     portrait.addEventListener('error', () => portrait.remove());
   }
-  const header = el('div', { class: 'chead' },
-    portrait,
-    el('div', { class: 'grow' },
-      el('h1', { class: 'small' }, s.name),
-      el('p', { class: 'muted' }, [s.cls, s.species].filter(Boolean).join(' · '))),
-    el('div', { class: 'chip' }, `${s.level} ур.`));
+  const header = el('div', { class: 'cheadwrap' },
+    el('div', { class: 'chead' },
+      portrait,
+      el('div', { class: 'grow' }, el('h1', { class: 'small' }, s.name)),
+      el('div', { class: 'chip' }, `${s.level} ур.`)),
+    el('p', { class: 'muted' }, [s.cls, s.species].filter(Boolean).join(' · ')));
 
   let body = [];
   if (c.tab === 'main') body = tabMain(s, ro, editBtn);
