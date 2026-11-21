@@ -49,10 +49,12 @@ function giftPicker(allowGold) {
 
   // золото
   const gold = inp('gg', '+0', true);
+  const coin = coinSelect('gc' + uid);
   const goldBox = el('div', { class: 'stack', hidden: true },
-    el('div', { class: 'field' }, el('label', { for: 'gg' + uid }, 'Сколько золота каждому, зм'), gold));
+    el('div', { class: 'field' }, el('label', { for: 'gg' + uid }, 'Сколько монет каждому'), gold),
+    el('div', { class: 'field' }, el('label', { for: 'gc' + uid }, 'Какие монеты'), coin));
 
-  const tabs = [['list', 'Из списка', listBox], ['own', 'Свой', ownBox]].concat(allowGold ? [['gold', 'Золото', goldBox]] : []);
+  const tabs = [['list', 'Из списка', listBox], ['own', 'Свой', ownBox]].concat(allowGold ? [['gold', 'Монеты', goldBox]] : []);
   const buttons = tabs.map(([key, label]) => {
     const b = el('button', { type: 'button', 'aria-pressed': String(key === mode) }, label);
     b.addEventListener('click', () => {
@@ -71,8 +73,8 @@ function giftPicker(allowGold) {
     read() {
       if (mode === 'gold') {
         const g = toInt(gold.value, 0);
-        if (g < 1) return { error: 'Впишите, сколько золота выдать.' };
-        return { gift: { kind: 'gold', gold: g }, label: `Золото: ${g} зм` };
+        if (g < 1) return { error: 'Впишите, сколько монет выдать.' };
+        return { gift: { kind: 'gold', gold: g, coin: coin.value }, label: `Монеты: ${g} ${coinLabel(coin.value)}` };
       }
       if (mode === 'own') {
         const name = oname.value.trim();

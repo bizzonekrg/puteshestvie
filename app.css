@@ -303,3 +303,10 @@ textarea {
 .results .pick { flex: 0 0 auto; }
 .pick .muted { overflow-wrap: anywhere; }
 .hint p.meta { color: var(--gold); font-weight: 600; }
+
+/* ---------- монеты ---------- */
+select {
+  width: 100%; height: 52px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--card); color: var(--text); font: inherit; font-size: 16px;
+}
+.tval.wallet { font-size: 16px; line-height: 1.35; overflow-wrap: anywhere; }

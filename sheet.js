@@ -13,6 +13,38 @@ function toInt(v, fallback) {
 }
 function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
 
+// ---------- монеты ----------
+// Пять видов: платиновые, золотые, электрумовые, серебряные, медные. Золото лежит в s.gold, остальное в s.coins.
+const COINS = [['pp', 'пм', 'Платиновые'], ['gp', 'зм', 'Золотые'], ['ep', 'эм', 'Электрумовые'], ['sp', 'см', 'Серебряные'], ['cp', 'мм', 'Медные']];
+function coinGet(s, k) { return k === 'gp' ? toInt(s.gold, 0) : toInt(s.coins && s.coins[k], 0); }
+function coinSet(s, k, v) {
+  v = Math.max(0, toInt(v, 0));
+  if (k === 'gp') s.gold = v;
+  else { s.coins = s.coins || {}; s.coins[k] = v; }
+}
+function coinLabel(k) { const c = COINS.find((x) => x[0] === k); return c ? c[1] : 'зм'; }
+function walletText(s) {
+  const parts = COINS.map(([k, short]) => [coinGet(s, k), short]).filter(([n]) => n > 0).map(([n, short]) => `${n} ${short}`);
+  return parts.length ? parts.join(' · ') : '0 зм';
+}
+function walletForm(s) {
+  openForm({
+    title: 'Кошелёк',
+    fields: COINS.map(([k, short, full]) => ({ key: k, label: `${full}, ${short}`, numeric: true, value: coinGet(s, k), fallback: coinGet(s, k) })),
+    onSave: (v) => { for (const [k] of COINS) coinSet(s, k, v[k]); changed(); },
+  });
+}
+// Выпадающий список вида монет (для ведущего)
+function coinSelect(id) {
+  const sel = el('select', { id });
+  for (const [k, short, full] of COINS) {
+    const o = el('option', { value: k }, `${full} (${short})`);
+    if (k === 'gp') o.selected = true;
+    sel.append(o);
+  }
+  return sel;
+}
+
 // ---------- разбор файла LSS ----------
 
 // Текст из «документа» LSS (вложенные абзацы) → список строк
@@ -197,6 +229,12 @@ function parseLss(fileText) {
     prof,
     stats, saves, skills, weapons,
     gold: Math.max(0, toInt(d.coins && d.coins.gp && d.coins.gp.value, 0)),
+    coins: {
+      cp: Math.max(0, toInt(d.coins && d.coins.cp && d.coins.cp.value, 0)),
+      sp: Math.max(0, toInt(d.coins && d.coins.sp && d.coins.sp.value, 0)),
+      ep: Math.max(0, toInt(d.coins && d.coins.ep && d.coins.ep.value, 0)),
+      pp: Math.max(0, toInt(d.coins && d.coins.pp && d.coins.pp.value, 0)),
+    },
     items,
     spell: {
       dc: toInt(d.spellsInfo && d.spellsInfo.save && d.spellsInfo.save.customModifier, 8 + prof + modOf(stats.cha)),
@@ -329,7 +367,7 @@ function showManual(profile) {
       hitDie: '', prof, stats: st,
       saves: { str: false, dex: false, con: false, int: false, wis: false, cha: false },
       skills: DEFAULT_SKILLS.map(([label, stat]) => ({ label, stat, prof: 0 })),
-      weapons: [], gold: 0, items: [],
+      weapons: [], gold: 0, coins: {}, items: [],
       spell: { dc: 8 + prof, atk: prof, slots: [] }, spells: [], features: [], profText: '',
     };
     await busy(save, 'Создаём…', async () => {
@@ -391,7 +429,7 @@ function showReview(profile, parsed) {
       line('Предметы', String(s.items.length)),
       line('Заклинания', `${s.spells.length}, ячеек: ${s.spell.slots.reduce((a, x) => a + x.max, 0)}`),
       line('Умения', String(s.features.length)),
-      line('Золото', `${s.gold} зм`)),
+      line('Монеты', walletText(s))),
     (bonusInputs.length || parsed.notes.length) ? el('div', { class: 'card notice' },
       el('div', { class: 'title' }, 'Нужно проверить'),
       parsed.notes.map((n) => el('p', { class: 'muted' }, n)),
@@ -419,6 +457,7 @@ async function openCharacter(profile, id, tab, back) {
   s.weapons = s.weapons || []; s.items = s.items || []; s.spells = s.spells || []; s.features = s.features || [];
   s.skills = s.skills || []; s.saves = s.saves || {}; s.spell = s.spell || { dc: 10, atk: 0, slots: [] };
   s.spell.slots = s.spell.slots || [];
+  s.coins = s.coins || {};
   CH = { profile, id: data.id, own: data.owner_id === profile.id, sheet: s, tab: tab || 'main', open: new Set(), saveState: 'saved', timer: null, badge: null, back: back || null, group: undefined, notices: [], checking: false };
   const opened = CH;
   renderChar();
@@ -551,7 +590,11 @@ function tabMain(s, ro, editBtn) {
       fields: [{ key: 'v', label: title + (suffix ? `, ${suffix}` : ''), numeric: true, value: s[key], fallback: s[key] }],
       onSave: (v) => { s[key] = Math.max(0, v.v); changed(); },
     }) }, 'Изменить'));
-  const row2 = el('div', { class: 'grid2' }, numCard('Опыт', String(s.xp), 'Опыт', 'xp'), numCard('Золото', `${s.gold} зм`, 'Золото', 'gold', 'зм'));
+  const wallet = el('div', { class: 'card tight' },
+    el('div', { class: 'label' }, 'Монеты'),
+    el('div', { class: 'tval wallet' }, walletText(s)),
+    ro ? null : el('button', { class: 'mini wide', type: 'button', onclick: () => walletForm(s) }, 'Изменить'));
+  const row2 = el('div', { class: 'grid2' }, numCard('Опыт', String(s.xp), 'Опыт', 'xp'), wallet);
 
   const statsGrid = el('div', { class: 'grid3' }, STAT_KEYS.map((k) => el('div', { class: 'tile' },
     el('div', { class: 'label' }, STAT_SHORT[k]),
@@ -651,13 +694,9 @@ function tabItems(s, ro, editBtn) {
     onDelete: isNew ? null : () => { s.items.splice(s.items.indexOf(it), 1); changed(); },
   });
   return [
-    el('div', { class: 'card rowcard' },
-      el('div', { class: 'grow' }, el('div', { class: 'label' }, 'Золото'), el('div', { class: 'tval' }, `${s.gold} зм`)),
-      editBtn('Изменить', () => openForm({
-        title: 'Золото',
-        fields: [{ key: 'v', label: 'Золото, зм', numeric: true, value: s.gold, fallback: s.gold }],
-        onSave: (v) => { s.gold = Math.max(0, v.v); changed(); },
-      }))),
+    el('div', { class: 'card' },
+      el('div', { class: 'cardhead' }, el('div', { class: 'title' }, 'Кошелёк'), editBtn('Изменить', () => walletForm(s))),
+      COINS.map(([k, short, full]) => el('div', { class: 'kv' }, el('span', { class: 'muted' }, full), el('strong', {}, `${coinGet(s, k)} ${short}`)))),
     el('h2', {}, 'Снаряжение'),
     s.items.length ? null : el('p', { class: 'muted' }, 'Предметов пока нет.'),
     s.items.map((it) => el('div', { class: 'card rowcard slim' },
@@ -853,8 +892,9 @@ function addItem(s, name, qty, note) {
 // Записать один подарок в лист и вернуть текст сообщения для игрока
 function applyGift(s, g) {
   if (g.kind === 'gold') {
-    s.gold = (toInt(s.gold, 0)) + toInt(g.gold, 0);
-    return { title: `Золото: +${g.gold} зм`, sub: '' };
+    const k = COINS.some((x) => x[0] === g.coin) ? g.coin : 'gp';
+    coinSet(s, k, coinGet(s, k) + toInt(g.gold, 0));
+    return { title: `Монеты: +${g.gold} ${coinLabel(k)}`, sub: '' };
   }
   const qty = Math.max(1, toInt(g.qty, 1));
   const count = qty > 1 ? `, ${qty} шт.` : '';
