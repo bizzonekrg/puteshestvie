@@ -951,6 +951,7 @@ function tabMagic(s, ro, editBtn) {
       const hp = hintParts('feature', f, 'ft:' + i);
       return el('div', { class: 'card' },
         el('div', { class: 'title' }, f.name),
+        college && (s.collegeAdded || []).some((n) => hintKey(n) === hintKey(f.name)) ? el('div', { class: 'muted2' }, 'даёт ' + college.name.charAt(0).toLowerCase() + college.name.slice(1)) : null,
         el('div', { class: 'btnrow' },
           hp.btn,
           f.text ? el('button', { class: opened ? 'mini solid' : 'mini', type: 'button', 'aria-expanded': String(opened), onclick: () => { if (opened) c.open.delete(i); else c.open.add(i); renderChar(); } }, 'Описание') : null,
