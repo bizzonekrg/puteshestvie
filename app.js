@@ -238,7 +238,7 @@ async function showHome(profile) {
           el('p', { class: 'muted' }, `${ch.class_name || 'Персонаж'} · ${ch.level} ур.`)),
         el('span', { class: 'gold' }, 'Открыть'))),
       (!chErr && (!chars || !chars.length)) ? el('p', { class: 'muted' }, 'Персонажей пока нет. Загрузите первого.') : null,
-      el('button', { class: 'btn', type: 'button', onclick: () => showUpload(profile) }, 'Загрузить персонажа'),
+      el('button', { class: 'btn', type: 'button', onclick: () => showUpload(profile) }, 'Добавить персонажа'),
       await playerGroupsBlock(profile),
     ];
   }

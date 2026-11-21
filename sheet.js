@@ -321,10 +321,10 @@ function showUpload(profile) {
 
   show(false,
     el('div', { class: 'head' },
-      el('h1', { class: 'small' }, 'Загрузка персонажа'),
-      el('p', { class: 'muted' }, 'Скачайте в CharBox файл LSS и выберите его здесь.')),
+      el('h1', { class: 'small' }, 'Новый персонаж'),
+      el('p', { class: 'muted' }, 'Три способа: загрузить файл из CharBox, создать здесь по шагам или переписать готового с листа.')),
     el('div', { class: 'card' },
-      el('div', { class: 'title' }, 'Как получить файл'),
+      el('div', { class: 'title' }, 'Персонаж собран в CharBox'),
       el('p', { class: 'muted' }, '1. Откройте персонажа на dnd24.charbox.org.'),
       el('p', { class: 'muted' }, '2. Нажмите экспорт и выберите LSS.'),
       el('p', { class: 'muted' }, '3. Файл с окончанием lss_export.json сохранится в телефоне.')),
@@ -332,9 +332,13 @@ function showUpload(profile) {
     el('label', { for: 'lssfile', class: 'btn' }, 'Выбрать файл LSS'),
     err.node,
     el('div', { class: 'card' },
-      el('div', { class: 'title' }, 'Нет файла LSS?'),
-      el('p', { class: 'muted' }, 'Персонажа можно внести вручную, например по листу PDF: сначала основное, остальное допишете в листе.'),
-      el('button', { class: 'btn outline', type: 'button', onclick: () => showManual(profile) }, 'Внести персонажа вручную')),
+      el('div', { class: 'title' }, 'Нет персонажа?'),
+      el('p', { class: 'muted' }, 'Создайте его здесь по шагам: класс, предыстория, вид, характеристики, навыки и снаряжение. Сайт сам посчитает хиты, защиту и остальное по правилам 2024 года.'),
+      el('button', { class: 'btn', type: 'button', onclick: () => showCreate(profile) }, 'Создать персонажа по шагам')),
+    el('div', { class: 'card' },
+      el('div', { class: 'title' }, 'Персонаж уже есть на бумаге или в PDF?'),
+      el('p', { class: 'muted' }, 'Перепишите с листа основное одной формой. Сайт ничего не считает и не проверяет: что впишете, то и будет. Остальное допишете в листе.'),
+      el('button', { class: 'btn outline', type: 'button', onclick: () => showManual(profile) }, 'Внести готового персонажа вручную')),
     el('button', { class: 'btn outline spacer', type: 'button', onclick: () => route() }, 'Назад'));
 }
 
@@ -347,18 +351,18 @@ const DEFAULT_SKILLS = [
 
 function showManual(profile) {
   const err = errorBox();
-  const f = (id, label, placeholder, numeric, value) => {
+  const f = (id, label, placeholder, numeric, value, hint) => {
     const input = el('input', { id, type: 'text', inputmode: numeric ? 'numeric' : null, placeholder, autocomplete: 'off' });
     if (value !== undefined) input.value = String(value);
-    return { input, node: el('div', { class: 'field' }, el('label', { for: id }, label), input) };
+    return { input, node: el('div', { class: 'field' }, el('label', { for: id }, label), input, hint ? el('p', { class: 'muted small' }, hint) : null) };
   };
   const name = f('mn', 'Имя персонажа', 'Как зовут персонажа', false);
-  const cls = f('mc', 'Класс', 'Например: Воин', false);
-  const species = f('ms', 'Вид', 'Например: Человек', false);
-  const level = f('ml', 'Уровень', '1', true, 1);
-  const hp = f('mh', 'Хиты (максимум)', '10', true);
-  const ac = f('ma', 'КД', '10', true, 10);
-  const speed = f('mv', 'Скорость, фт', '30', true, 30);
+  const cls = f('mc', 'Класс', 'Например: Воин', false, undefined, 'Пишите как в правилах: Бард, Колдун, Жрец. По названию сайт подберёт умения, заклинания и подсказки.');
+  const species = f('ms', 'Вид', 'Например: Человек', false, undefined, 'Кто персонаж по рождению: человек, эльф, дварф.');
+  const level = f('ml', 'Уровень', '1', true, 1, 'От 1 до 20. От уровня зависят умения и ячейки.');
+  const hp = f('mh', 'Хиты (максимум)', '10', true, undefined, 'Сколько урона выдерживает персонаж. Число с листа.');
+  const ac = f('ma', 'КД', '10', true, 10, 'Класс доспеха: во столько надо попасть, чтобы ранить персонажа.');
+  const speed = f('mv', 'Скорость, фт', '30', true, 30, 'Сколько футов проходит за ход. Обычно 30.');
   const stats = STAT_KEYS.map((k) => Object.assign(f('mst' + k, STAT_FULL[k], '10', true, 10), { k }));
 
   const save = el('button', { class: 'btn', type: 'button' }, 'Создать персонажа');
@@ -394,10 +398,10 @@ function showManual(profile) {
   show(false,
     el('div', { class: 'head' },
       el('h1', { class: 'small' }, 'Персонаж вручную'),
-      el('p', { class: 'muted' }, 'Впишите основное с листа. Владения, оружие, вещи, заклинания и умения добавите потом в самом листе.')),
+      el('p', { class: 'muted' }, 'Эта форма для персонажа, который уже создан на бумаге или в PDF. Впишите основное с листа; владения, оружие, вещи, заклинания и умения добавите потом в самом листе. Если персонажа ещё нет, вернитесь назад и создайте его по шагам.')),
     el('div', { class: 'card' }, name.node, cls.node, species.node,
       el('div', { class: 'grid2' }, level.node, hp.node), el('div', { class: 'grid2' }, ac.node, speed.node)),
-    el('div', { class: 'card' }, el('div', { class: 'title' }, 'Характеристики'), el('p', { class: 'muted' }, 'Вписывайте само значение (например 16), а не модификатор.'),
+    el('div', { class: 'card' }, el('div', { class: 'title' }, 'Характеристики'), el('p', { class: 'muted' }, 'Сила, Ловкость и остальные: от них считаются все броски. Вписывайте само значение (например 16), а не модификатор (+3).'),
       el('div', { class: 'grid2' }, stats.map((x) => x.node))),
     err.node, save,
     el('button', { class: 'btn outline', type: 'button', onclick: () => showUpload(profile) }, 'Назад'));
@@ -826,6 +830,7 @@ function tabMagic(s, ro, editBtn) {
           const code = spellListCode(s);
           const h = SPELL_HINT_INDEX.get(hintKey(x.name)) || (x.en ? SPELL_HINT_INDEX.get(hintKey(x.en)) : null);
           const given = (s.collegeAdded || []).some((n) => hintKey(n) === hintKey(x.name));
+          if ((s.extraSpells || []).some((n) => hintKey(n) === hintKey(x.name))) return el('div', { class: 'small muted2 nowrap' }, 'от вида');
           const cdx = classData(s.cls), sub = cdx ? cdx.subs.find((k) => k.key === s.college) : null;
           if (given && sub) return el('div', { class: 'small muted2 nowrap' }, cdx.subNew.replace('Новое ', ''));
           return code && h && h.classes && !h.classes.includes(code) && !given ? el('div', { class: 'small warn' }, 'не из списка класса') : null;
@@ -1039,7 +1044,7 @@ function spellLimits(s) {
 }
 // Свои заклинания — без тех, что дал подкласс (они в счёт не идут)
 function ownSpells(s, cantrips) {
-  const given = new Set((s.collegeAdded || []).map(hintKey));
+  const given = new Set((s.collegeAdded || []).concat(s.extraSpells || []).map(hintKey));
   return s.spells.filter((x) => (cantrips ? x.level === 0 : x.level > 0) && !given.has(hintKey(x.name)));
 }
 function spellCountText(s) {

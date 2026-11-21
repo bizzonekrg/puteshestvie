@@ -350,3 +350,23 @@ select {
 
 .muted2 { color: var(--muted); font-size: 12px; }
 .warn.small, .small.warn { font-size: 12px; }
+
+/* пошаговое создание персонажа */
+.wsteps { display: flex; flex-direction: column; gap: 6px; }
+.wbar { display: flex; gap: 4px; }
+.wbar span { flex: 1; height: 6px; border-radius: 3px; background: var(--line); }
+.wbar span.on { background: var(--gold); }
+.wnav { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
+.wpick { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 2px solid var(--line); background: var(--bg); }
+.wpick.on { border-color: var(--gold); background: var(--card); }
+.wpickbtn { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; min-height: 44px; padding: 0; border: 0; background: none; color: var(--text); font: inherit; text-align: left; }
+.wpickbtn .title { font-size: 15px; font-weight: 600; }
+.wpickbtn .muted { font-size: 13px; }
+.wchecks { display: flex; flex-direction: column; gap: 4px; }
+.wcheck { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--text); font: inherit; font-size: 15px; text-align: left; }
+.wcheck .box { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--line); }
+.wcheck.on .box { background: var(--gold); border-color: var(--gold); }
+.wcheck:disabled { opacity: .5; }
+.wstat { display: grid; grid-template-columns: minmax(0, 1fr) 76px 28px 70px; gap: 8px; align-items: center; font-size: 15px; }
+.wstat select, .wstat input { min-height: 44px; padding: 0 8px; }
+.wstat strong { text-align: right; }
