@@ -714,8 +714,12 @@ function tabItems(s, ro, editBtn) {
       COINS.map(([k, short, full]) => el('div', { class: 'kv' }, el('span', { class: 'muted' }, full), el('strong', {}, `${coinGet(s, k)} ${short}`)))),
     el('h2', {}, 'Снаряжение'),
     s.items.length ? null : el('p', { class: 'muted' }, 'Предметов пока нет.'),
-    s.items.map((it) => el('div', { class: 'card rowcard slim' },
-      el('div', { class: 'grow' }, it.name, it.note ? el('p', { class: 'muted small' }, it.note) : null),
+    s.items.map((it, i) => el('div', { class: 'card rowcard slim' },
+      el('div', { class: 'grow' }, it.name, it.note ? (() => {
+        const key = 'it:' + i, opened = CH.open.has(key);
+        return el('button', { class: 'notebtn' + (opened ? ' open' : ''), type: 'button', 'aria-expanded': String(opened),
+          onclick: () => { if (opened) CH.open.delete(key); else CH.open.add(key); renderChar(); } }, opened ? it.note : 'Описание ▾');
+      })() : null),
       el('span', { class: 'muted nowrap' }, `${it.qty} шт.`),
       editBtn('Изм.', () => itemForm(it, false)))),
     ro ? null : el('button', { class: 'btn dashed', type: 'button', onclick: () => openGiftModal((r) => {
@@ -807,7 +811,9 @@ function tabMagic(s, ro, editBtn) {
     }
   }
   if (!s.spells.length) spellBlocks.push(el('h2', {}, 'Заклинания'), el('p', { class: 'muted' }, 'Заклинаний пока нет.'));
-  if (!ro) spellBlocks.push(el('button', { class: 'btn dashed', type: 'button', onclick: () => spellForm({ name: '', level: 1 }, true) }, '+ Добавить заклинание'));
+  if (!ro) spellBlocks.push(
+    el('button', { class: 'btn dashed', type: 'button', onclick: () => openSpellPicker(s) }, '+ Добавить из справочника'),
+    el('button', { class: 'btn dashed', type: 'button', onclick: () => spellForm({ name: '', level: 1 }, true) }, '+ Вписать заклинание вручную'));
 
   const featureForm = (f, isNew) => openForm({
     title: isNew ? 'Новое умение' : 'Умение',
@@ -968,6 +974,48 @@ function tabGroup(c, ro) {
     el('div', { class: 'title' }, 'Группа'),
     el('p', { class: 'muted' }, 'Этот персонаж пока не в группе.'),
     el('button', { class: 'btn', type: 'button', onclick: () => go(() => showGroups(c.profile)) }, 'Вступить или создать группу'))];
+}
+
+// ---------- выбор заклинания из справочника ----------
+
+function openSpellPicker(s) {
+  const back = el('div', { class: 'modal-back' });
+  const close = () => { back.remove(); renderChar(); };
+  const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+  const has = (h) => s.spells.some((x) => h.names.some((n) => hintKey(n) === hintKey(x.name)) || (x.en && hintKey(x.en) === hintKey(h.en)));
+  let level = -1;
+  const search = el('input', { id: 'spq', type: 'text', placeholder: 'Например: огненный, лечение', autocomplete: 'off' });
+  const results = el('div', { class: 'results' });
+  const status = el('p', { class: 'muted' }, 'Нажмите на заклинание, чтобы добавить его в лист.');
+  const chips = el('div', { class: 'chips' });
+  const draw = () => {
+    chips.replaceChildren(...[-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => el('button', { class: 'chipbtn', type: 'button', 'aria-pressed': String(level === n),
+      onclick: () => { level = n; draw(); } }, n < 0 ? 'Все' : n === 0 ? 'Заговоры' : String(n))));
+    const q = hintKey(search.value);
+    const list = SPELL_HINTS.filter((h) => (level < 0 || h.level === level) && (!q || h.names.some((n) => hintKey(n).includes(q))));
+    results.replaceChildren(...(list.length ? list.slice(0, 60).map((h) => {
+      const mine = has(h);
+      return el('button', { class: 'pick', type: 'button', disabled: mine, onclick: () => {
+        s.spells.push({ name: cap(h.names[0]), level: h.level, en: h.en });
+        changed();
+        status.textContent = 'Добавлено: ' + cap(h.names[0]);
+        draw();
+      } },
+        el('span', { class: 'title' }, cap(h.names[0]) + (mine ? ' — уже в листе' : '')),
+        el('span', { class: 'muted' }, (h.level === 0 ? 'Заговор' : h.level + ' ур.') + ' · ' + h.meta));
+    }) : [el('p', { class: 'muted' }, 'Ничего не нашлось. Попробуйте другое слово или впишите заклинание вручную.')]));
+    if (list.length > 60) results.append(el('p', { class: 'muted small' }, `Показаны первые 60 из ${list.length}. Уточните поиск или выберите уровень.`));
+  };
+  search.addEventListener('input', draw);
+  draw();
+  const box = el('div', { class: 'modal stack' },
+    el('div', { class: 'title' }, 'Заклинание из справочника'),
+    el('div', { class: 'field' }, el('label', { for: 'spq' }, 'Поиск по названию'), search),
+    chips, results, status,
+    el('button', { class: 'btn', type: 'button', onclick: close }, 'Готово'));
+  back.addEventListener('click', (e) => { if (e.target === back) close(); });
+  back.append(box);
+  document.body.append(back);
 }
 
 // ---------- выданное ведущим ----------

@@ -325,3 +325,10 @@ select {
 .grid2 > .card.tight > .tval, .grid2 > .card.tight > .coincol { margin-top: auto; margin-bottom: auto; align-items: center; }
 
 .rowcard.slim .grow, .slimcard .cardhead .grow { font-size: 15px; }
+
+.notebtn { display: block; margin-top: 2px; padding: 0; border: 0; background: none; color: var(--gold); font: inherit; font-size: 13px; text-align: left; min-height: 24px; }
+.notebtn.open { color: var(--muted); }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+.chipbtn { flex: 0 0 auto; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--text); font: inherit; font-size: 14px; }
+.chipbtn[aria-pressed="true"] { background: var(--gold); color: var(--gold-ink); border-color: var(--gold); }
+.pick:disabled { opacity: .5; }
