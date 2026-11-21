@@ -210,7 +210,39 @@ async function showHome(profile) {
     el('div', { class: 'card' },
       el('div', { class: 'title' }, 'Персонажи'),
       el('p', { class: 'muted' }, 'Загрузка персонажа и его лист появятся на следующем шаге сборки сайта.')),
-    el('button', { class: 'btn outline spacer', type: 'button', onclick: logout }, 'Выйти'));
+    el('button', { class: 'btn outline spacer', type: 'button', onclick: () => showChangePassword(profile) }, 'Сменить пароль'),
+    el('button', { class: 'btn outline', type: 'button', onclick: logout }, 'Выйти'));
+}
+
+function showChangePassword(profile) {
+  const pass = field('npass', 'Новый пароль', 'password', 'Не короче 6 символов', { autocomplete: 'new-password' });
+  const pass2 = field('npass2', 'Новый пароль ещё раз', 'password', 'Повторите пароль', { autocomplete: 'new-password' });
+  const err = errorBox();
+  const submit = el('button', { class: 'btn', type: 'submit' }, 'Сохранить пароль');
+
+  const form = el('form', { class: 'stack', novalidate: true, onsubmit: async (e) => {
+    e.preventDefault();
+    err.set('');
+    const p = pass.input.value;
+    if (p.length < 6) return err.set('Пароль должен быть не короче 6 символов.');
+    if (p !== pass2.input.value) return err.set('Пароли не совпадают.');
+    await busy(submit, 'Сохраняем…', async () => {
+      const { error } = await sb.auth.updateUser({ password: p });
+      if (error) return err.set('Не получилось сменить пароль. Попробуйте ещё раз.');
+      show(true,
+        el('div', { class: 'card notice' },
+          el('div', { class: 'title' }, 'Пароль изменён'),
+          el('p', { class: 'muted' }, 'В следующий раз входите с новым паролем.')),
+        el('button', { class: 'btn', type: 'button', onclick: () => route() }, 'Готово'));
+    });
+  } }, pass.node, pass2.node, err.node, submit);
+
+  show(false,
+    el('div', { class: 'head' },
+      el('h1', { class: 'small' }, 'Смена пароля'),
+      el('p', { class: 'muted' }, `Номер: ${prettyPhone(profile.phone)}`)),
+    form,
+    el('button', { class: 'btn outline spacer', type: 'button', onclick: () => route() }, 'Назад'));
 }
 
 async function showAdmin(profile) {
@@ -245,12 +277,40 @@ async function showAdmin(profile) {
       el('div', { class: 'row2' }, yes, no));
   });
 
+  // участники, которым админ может сбросить пароль
+  const { data: members, error: mErr } = await sb.from('profiles')
+    .select('id, name, phone, role, is_admin')
+    .eq('status', 'approved')
+    .order('name', { ascending: true });
+
+  const memberCards = (members || []).map((m) => {
+    const result = el('p', { class: 'muted', hidden: true });
+    const reset = el('button', { class: 'btn outline', type: 'button' }, 'Сбросить пароль');
+    reset.addEventListener('click', async () => {
+      if (!window.confirm(`Сбросить пароль: ${m.name}? Старый пароль перестанет работать.`)) return;
+      err.set('');
+      await busy(reset, 'Сбрасываем…', async () => {
+        const { data: out, error: fnErr } = await sb.functions.invoke('admin-reset-password', { body: { user_id: m.id } });
+        if (fnErr || !out || !out.password) return err.set('Не получилось сбросить пароль. Попробуйте ещё раз.');
+        result.hidden = false;
+        result.replaceChildren('Временный пароль: ', el('strong', { style: 'color:#EDEAE2;font-size:18px;letter-spacing:0.06em' }, out.password),
+          '. Передайте его участнику. После входа пусть сменит пароль кнопкой «Сменить пароль».');
+      });
+    });
+    return el('div', { class: 'card' },
+      el('div', { class: 'title' }, m.name + (m.is_admin ? ' (админ)' : '')),
+      el('p', { class: 'muted' }, `${prettyPhone(m.phone)} · ${m.role === 'master' ? 'ведущий' : 'игрок'}`),
+      reset, result);
+  });
+
   show(false,
     el('div', { class: 'head' },
       el('h1', { class: 'small' }, 'Заявки на вход'),
       el('p', { class: 'muted' }, 'Этот экран видит только админ сайта.')),
     err.node,
     cards.length ? cards : (error ? null : el('div', { class: 'card' }, el('p', { class: 'muted' }, 'Новых заявок нет.'))),
+    el('h1', { class: 'small', style: 'margin-top:10px' }, 'Участники'),
+    mErr ? el('p', { class: 'error' }, 'Не удалось загрузить участников.') : memberCards,
     el('button', { class: 'btn outline spacer', type: 'button', onclick: () => route() }, 'Назад'));
 }
 
