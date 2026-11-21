@@ -296,8 +296,7 @@ textarea {
 /* ---------- подсказки ---------- */
 .slimcard { gap: 8px; padding: 6px 8px 6px 16px; border-radius: 12px; }
 .slimcard .cardhead { gap: 8px; }
-.slimcard .cardhead .mini { padding: 0 8px; font-size: 13px; }
-.slimcard .cardhead .grow { font-size: 15px; }
+.slimcard .cardhead .mini { padding: 0 10px; }
 .hint { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; margin-right: 8px; margin-bottom: 6px; border-radius: 10px; border: 1px solid var(--gold); background: var(--bg); }
 .hint p { margin: 0; line-height: 1.45; color: #C9CCD4; }
 .hint strong { color: var(--text); }

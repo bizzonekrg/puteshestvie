@@ -763,8 +763,8 @@ function tabMagic(s, ro, editBtn) {
   const hintParts = (kind, obj, key) => {
     const opened = c.open.has(key);
     const h = findHint(kind, obj);
-    const btn = el('button', { class: 'mini', type: 'button', 'aria-expanded': String(opened),
-      onclick: () => { if (opened) c.open.delete(key); else c.open.add(key); renderChar(); } }, opened ? 'Скрыть' : 'Подсказка');
+    const btn = el('button', { class: opened ? 'mini solid' : 'mini', type: 'button', 'aria-expanded': String(opened), 'aria-label': opened ? 'Скрыть подсказку' : 'Подсказка',
+      onclick: () => { if (opened) c.open.delete(key); else c.open.add(key); renderChar(); } }, 'Инфо');
     let box = null;
     if (opened) {
       if (!h) box = el('div', { class: 'hint' }, el('p', { class: 'muted small' }, ro ? 'Подсказки пока нет.' : 'Встроенной подсказки для этого названия пока нет. Нажмите «Изм.» и впишите свою.'));
