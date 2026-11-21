@@ -298,3 +298,8 @@ textarea {
 .hint p { margin: 0; line-height: 1.45; color: #C9CCD4; }
 .hint strong { color: var(--text); }
 .card:not(.slimcard) > .hint { margin-right: 0; margin-bottom: 0; }
+
+/* правки по скринам экрана «Выдать» и параметры в подсказке */
+.results .pick { flex: 0 0 auto; }
+.pick .muted { overflow-wrap: anywhere; }
+.hint p.meta { color: var(--gold); font-weight: 600; }

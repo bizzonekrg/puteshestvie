@@ -710,6 +710,7 @@ function tabMagic(s, ro, editBtn) {
       if (!h) box = el('div', { class: 'hint' }, el('p', { class: 'muted small' }, ro ? 'Подсказки пока нет.' : 'Встроенной подсказки для этого названия пока нет. Нажмите «Изм.» и впишите свою.'));
       else if (h.own) box = el('div', { class: 'hint' }, h.text.split('\n').map((p) => el('p', { class: 'small' }, p)));
       else box = el('div', { class: 'hint' },
+        h.meta ? el('p', { class: 'small meta' }, h.meta) : null,
         el('p', { class: 'small' }, el('strong', {}, 'Что делает. '), h.what),
         el('p', { class: 'small' }, el('strong', {}, 'Когда применять. '), h.when));
     }
