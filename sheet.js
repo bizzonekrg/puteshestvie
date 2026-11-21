@@ -826,6 +826,8 @@ function tabMagic(s, ro, editBtn) {
           const code = spellListCode(s);
           const h = SPELL_HINT_INDEX.get(hintKey(x.name)) || (x.en ? SPELL_HINT_INDEX.get(hintKey(x.en)) : null);
           const given = (s.collegeAdded || []).some((n) => hintKey(n) === hintKey(x.name));
+          const cdx = classData(s.cls), sub = cdx ? cdx.subs.find((k) => k.key === s.college) : null;
+          if (given && sub) return el('div', { class: 'small muted2' }, 'даёт ' + sub.name.charAt(0).toLowerCase() + sub.name.slice(1) + ', в счёт не идёт');
           return code && h && h.classes && !h.classes.includes(code) && !given ? el('div', { class: 'small warn' }, 'не из списка класса') : null;
         })()), hp.btn, editBtn('Изм.', () => spellForm(x, false))),
         hp.box));
