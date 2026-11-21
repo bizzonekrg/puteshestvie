@@ -7,6 +7,27 @@ const EMAIL_DOMAIN = 'igrok.puteshestvie.kz';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const app = document.getElementById('app');
 
+// Код группы из ссылки-приглашения (?code=XXXXXX): запоминаем и убираем из адреса
+let pendingCode = null;
+try {
+  const url = new URL(location.href);
+  const fromUrl = url.searchParams.get('code');
+  if (fromUrl) {
+    pendingCode = fromUrl.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 12) || null;
+    if (pendingCode) sessionStorage.setItem('joinCode', pendingCode);
+    history.replaceState(null, '', url.pathname);
+  } else {
+    pendingCode = sessionStorage.getItem('joinCode');
+  }
+} catch (_) { /* хранилище может быть недоступно — тогда код просто введут вручную */ }
+
+function takeJoinCode() {
+  const c = pendingCode;
+  pendingCode = null;
+  try { sessionStorage.removeItem('joinCode'); } catch (_) { /* не страшно */ }
+  return c;
+}
+
 // ---------- помощники ----------
 
 // Собирает элемент. Текст всегда вставляется как текст, не как разметка.
@@ -359,6 +380,8 @@ async function route() {
   }
   if (!profile) { await sb.auth.signOut(); return showLogin(); }
   if (profile.status !== 'approved') return showWaiting(profile);
+  // пришли по ссылке-приглашению: игрока сразу ведём на вступление с подставленным кодом
+  if (pendingCode && profile.role === 'player') return showGroups(profile, takeJoinCode());
   return showHome(profile);
 }
 

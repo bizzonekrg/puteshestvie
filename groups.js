@@ -34,7 +34,7 @@ function ratingText(master) {
 
 // ---------- экран «Выбор группы» (игрок) ----------
 
-async function showGroups(profile) {
+async function showGroups(profile, prefillCode) {
   show(false, el('p', { class: 'muted center' }, 'Загрузка…'));
   const { groups, error: gErr } = await loadMyGroups();
   const { data: allChars, error: cErr } = await sb.from('characters')
@@ -60,6 +60,7 @@ async function showGroups(profile) {
   });
 
   const code = field('gcode', 'Код группы', 'text', 'Введите код', { autocapitalize: 'characters', maxlength: '12' });
+  if (prefillCode) code.input.value = prefillCode;
   const joinBtn = el('button', { class: 'btn', type: 'button' }, 'Вступить');
   joinBtn.addEventListener('click', async () => {
     err.set('');
@@ -162,10 +163,19 @@ async function showGroup(profile, gid) {
   // управление предводителя
   let manage = null;
   if (d.is_leader) {
-    const copied = el('span', { class: 'muted small', hidden: true }, 'Скопировано');
+    // приглашение: название группы, код и ссылка, по которой код подставится сам
+    const link = `${location.origin}${location.pathname}?code=${encodeURIComponent(d.code)}`;
+    const invite = `Группа «${d.name}»\nКод для вступления: ${d.code}\n${link}`;
+    const copied = el('span', { class: 'muted small', hidden: true }, 'Приглашение скопировано: название, код и ссылка');
     const copyBtn = el('button', { class: 'mini', type: 'button' }, 'Скопировать');
     copyBtn.addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(d.code); copied.hidden = false; } catch (_) { copied.textContent = 'Не скопировалось — перепишите вручную'; copied.hidden = false; }
+      try { await navigator.clipboard.writeText(invite); copied.textContent = 'Приглашение скопировано: название, код и ссылка'; }
+      catch (_) { copied.textContent = 'Не скопировалось — перепишите код вручную'; }
+      copied.hidden = false;
+    });
+    const shareBtn = navigator.share ? el('button', { class: 'btn', type: 'button' }, 'Отправить приглашение') : null;
+    if (shareBtn) shareBtn.addEventListener('click', async () => {
+      try { await navigator.share({ text: invite }); } catch (_) { /* человек закрыл окно отправки */ }
     });
     const newCode = el('button', { class: 'btn outline', type: 'button' }, 'Сменить код');
     newCode.addEventListener('click', () => { if (window.confirm('Сменить код? Старый код перестанет работать.')) act(newCode, 'new_group_code', { p_group: gid }); });
@@ -188,6 +198,8 @@ async function showGroup(profile, gid) {
         el('div', {}, el('div', { class: 'label' }, 'Код для вступления'), el('div', { class: 'codebig' }, d.code)),
         copyBtn),
       copied,
+      el('p', { class: 'muted small prewrap' }, invite),
+      shareBtn,
       newCode, rename, transfer, cancel);
   }
 
@@ -240,6 +252,8 @@ async function masterGroupsBlock(profile) {
   const { groups, error } = await loadMyGroups();
   const err = errorBox();
   const code = field('mcode', 'Код группы', 'text', 'Введите код', { autocapitalize: 'characters', maxlength: '12' });
+  const fromLink = takeJoinCode();
+  if (fromLink) code.input.value = fromLink;
   const send = el('button', { class: 'btn', type: 'button' }, 'Отправить заявку');
   send.addEventListener('click', async () => {
     err.set('');
