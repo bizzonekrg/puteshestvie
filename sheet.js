@@ -559,7 +559,7 @@ function renderChar() {
     c.tab = key; renderChar(); window.scrollTo(0, 0);
   } }, label);
   const notices = c.notices.map((n) => el('div', { class: 'card notice' },
-    el('div', { class: 'title' }, 'Ведущий выдал'),
+    el('div', { class: 'title' }, n.own ? 'Добавлено' : 'Ведущий выдал'),
     el('p', {}, n.title),
     n.sub ? el('p', { class: 'muted small' }, n.sub) : null,
     el('button', { class: 'mini wide', type: 'button', onclick: () => { c.notices.splice(c.notices.indexOf(n), 1); renderChar(); } }, 'Понятно')));
@@ -718,7 +718,11 @@ function tabItems(s, ro, editBtn) {
       el('div', { class: 'grow' }, it.name, it.note ? el('p', { class: 'muted small' }, it.note) : null),
       el('span', { class: 'muted nowrap' }, `${it.qty} шт.`),
       editBtn('Изм.', () => itemForm(it, false)))),
-    ro ? null : el('button', { class: 'btn dashed', type: 'button', onclick: () => itemForm({ name: '', qty: 1 }, true) }, '+ Добавить предмет'),
+    ro ? null : el('button', { class: 'btn dashed', type: 'button', onclick: () => openGiftModal((r) => {
+      for (const g of r.gifts) CH.notices.push(Object.assign(applyGift(s, g), { own: true }));
+      changed();
+    }, true) }, '+ Добавить из списка'),
+    ro ? null : el('button', { class: 'btn dashed', type: 'button', onclick: () => itemForm({ name: '', qty: 1 }, true) }, '+ Вписать предмет вручную'),
   ];
 }
 

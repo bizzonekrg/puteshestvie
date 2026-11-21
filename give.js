@@ -2,7 +2,7 @@
 // Общие помощники (el, show, sb, busy, errorBox, route) — в app.js; rpcError — в groups.js; toInt — в sheet.js; CATALOG — в catalog.js.
 
 // Блок выбора «что выдаём». allowGold=false — для награды в конце игры (золото там отдельным полем).
-function giftPicker(allowGold) {
+function giftPicker(allowGold, own) {
   let mode = 'list';
   let chosen = null;
   const uid = Math.random().toString(36).slice(2, 8);
@@ -33,7 +33,7 @@ function giftPicker(allowGold) {
   const listBox = el('div', { class: 'stack' },
     el('div', { class: 'field' }, el('label', { for: 'gs' + uid }, 'Поиск по списку ДнД 2024'), search),
     results, picked,
-    el('div', { class: 'field' }, el('label', { for: 'gq' + uid }, 'Сколько штук каждому'), qty));
+    el('div', { class: 'field' }, el('label', { for: 'gq' + uid }, own ? 'Сколько штук' : 'Сколько штук каждому'), qty));
 
   // свой предмет
   const oname = inp('on', 'Например: Клинок бури', false);
@@ -45,7 +45,7 @@ function giftPicker(allowGold) {
     el('div', { class: 'field' }, el('label', { for: 'on' + uid }, 'Название'), oname),
     el('div', { class: 'field' }, el('label', { for: 'od' + uid }, 'Урон (заполните, если это оружие)'), odmg),
     el('div', { class: 'field' }, el('label', { for: 'ox' + uid }, 'Описание и свойства (не обязательно)'), odesc),
-    el('div', { class: 'field' }, el('label', { for: 'oq' + uid }, 'Сколько штук каждому'), oqty));
+    el('div', { class: 'field' }, el('label', { for: 'oq' + uid }, own ? 'Сколько штук' : 'Сколько штук каждому'), oqty));
 
   // золото
   const coins = coinInputs('gc' + uid);
@@ -65,7 +65,7 @@ function giftPicker(allowGold) {
 
   return {
     node: el('div', { class: 'stack' },
-      el('div', { class: 'label' }, 'Что выдаём'),
+      el('div', { class: 'label' }, own ? 'Что добавляем' : 'Что выдаём'),
       el('div', { class: 'choice' + (allowGold ? ' three' : '') }, buttons),
       listBox, ownBox, goldBox),
     // Возвращает { gifts: [...], label } или { error }. У монет подарков столько, сколько видов заполнено.
@@ -93,20 +93,20 @@ function giftPicker(allowGold) {
 }
 
 // Всплывающее окно выбора предмета (для экрана «Завершение игры»)
-function openGiftModal(onPick) {
+function openGiftModal(onPick, own) {
   const back = el('div', { class: 'modal-back' });
   const close = () => back.remove();
-  const picker = giftPicker(false);
+  const picker = giftPicker(false, own);
   const err = errorBox();
   const box = el('div', { class: 'modal stack' },
-    el('div', { class: 'title' }, 'Предмет в награду'),
+    el('div', { class: 'title' }, own ? 'Добавить в свои вещи' : 'Предмет в награду'),
     picker.node, err.node,
     el('button', { class: 'btn', type: 'button', onclick: () => {
       const r = picker.read();
       if (r.error) return err.set(r.error);
       close();
       onPick(r);
-    } }, 'Выбрать'),
+    } }, own ? 'Добавить' : 'Выбрать'),
     el('button', { class: 'btn link', type: 'button', onclick: close }, 'Отмена'));
   back.addEventListener('click', (e) => { if (e.target === back) close(); });
   back.append(box);
