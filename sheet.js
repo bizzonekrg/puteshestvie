@@ -685,11 +685,13 @@ function tabMain(s, ro, editBtn) {
       { key: 'level', label: 'Уровень', numeric: true, value: s.level, fallback: s.level },
       { key: 'ac', label: 'КД', numeric: true, value: s.ac, fallback: s.ac },
       { key: 'speed', label: 'Скорость, фт', numeric: true, value: s.speed, fallback: s.speed },
-      { key: 'prof', label: 'Бонус мастерства', numeric: true, value: s.prof, fallback: s.prof },
+      { key: 'prof', label: 'Бонус мастерства', numeric: true, value: s.prof, fallback: s.prof, hint: 'Меняется сам вместе с уровнем: 1–4 ур. +2, 5–8 +3, 9–12 +4, 13–16 +5, 17–20 +6.' },
     ],
     onSave: (v) => {
       s.name = (v.name || s.name).slice(0, 80); s.cls = v.cls; s.species = v.species;
+      const oldLevel = s.level, oldProf = s.prof;
       s.level = clamp(v.level, 1, 20); s.ac = v.ac; s.speed = Math.max(0, v.speed); s.prof = clamp(v.prof, 0, 10);
+      if (s.level !== oldLevel && s.prof === oldProf) s.prof = 2 + Math.floor((s.level - 1) / 4);
       changed();
     },
     deleteText: 'Удалить персонажа',
