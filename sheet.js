@@ -641,12 +641,13 @@ function tabMain(s, ro, editBtn) {
   const listRow = (p, label, value, onTap) => (editing
     ? el('button', { class: 'lrow tap', type: 'button', onclick: onTap }, el('span', {}, mark(p) + label), el('strong', {}, value))
     : el('div', { class: 'lrow' }, el('span', {}, mark(p) + label), el('strong', {}, value)));
-  const profToggle = ro ? null : el('button', { class: 'mini', type: 'button', onclick: () => { CH.editProf = !CH.editProf; renderChar(); } }, editing ? 'Готово' : 'Изменить');
+  const profToggleBtn = () => (ro ? null : el('button', { class: editing ? 'mini solid' : 'mini', type: 'button', onclick: () => { CH.editProf = !CH.editProf; renderChar(); } }, editing ? 'Готово' : 'Изменить'));
+  const profToggle = profToggleBtn();
   const saves = el('div', { class: 'card' }, el('div', { class: 'cardhead' }, el('div', { class: 'title' }, 'Спасброски'), profToggle),
     editing ? el('p', { class: 'muted small' }, 'Нажмите на строку, чтобы поставить или снять владение.') : null,
     STAT_KEYS.map((k) => listRow(s.saves[k] ? 1 : 0, STAT_FULL[k], signed(modOf(s.stats[k]) + (s.saves[k] ? s.prof : 0)), () => { s.saves[k] = !s.saves[k]; changed(); })),
     el('p', { class: 'muted small' }, `● — владение. Бонус мастерства ${signed(s.prof)}`));
-  const skills = el('div', { class: 'card' }, el('div', { class: 'title' }, 'Навыки'),
+  const skills = el('div', { class: 'card' }, el('div', { class: 'cardhead' }, el('div', { class: 'title' }, 'Навыки'), profToggleBtn()),
     editing ? el('p', { class: 'muted small' }, 'Нажатие по кругу: нет владения → владение (●) → экспертиза (●●).') : null,
     s.skills.map((sk) => listRow(sk.prof || 0, `${sk.label} (${STAT_SHORT[sk.stat]})`, signed(skillBonus(s, sk)), () => { sk.prof = ((sk.prof || 0) + 1) % 3; changed(); })));
 
