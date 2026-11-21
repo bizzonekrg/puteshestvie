@@ -849,7 +849,12 @@ function tabMagic(s, ro, editBtn) {
     s.college = col.key;
     s.collegeAdded = s.collegeAdded || [];
     for (const [, n] of m.ft) { s.features.push({ name: n, text: col.name, usesMax: 0, usesLeft: 0 }); s.collegeAdded.push(n); }
-    for (const [, n, lvl, en] of m.spl) { s.spells.push({ name: n, level: lvl, en }); s.collegeAdded.push(n); }
+    for (const [, n, lvl, en] of m.spl) {
+      const h = SPELL_HINT_INDEX.get(hintKey(en));
+      const name = h ? h.names[0].charAt(0).toUpperCase() + h.names[0].slice(1) : n;
+      s.spells.push({ name, level: h ? h.level : lvl, en });
+      s.collegeAdded.push(n); if (name !== n) s.collegeAdded.push(name);
+    }
     changed();
   };
   let collegeCard = null;
