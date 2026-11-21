@@ -131,7 +131,7 @@ async function showGuild(profile, gid) {
         const no = el('button', { class: 'mini', type: 'button' }, 'Нет');
         yes.addEventListener('click', () => act(yes, 'guild_decide', { p_request: r.id, p_ok: true }));
         no.addEventListener('click', () => act(no, 'guild_decide', { p_request: r.id, p_ok: false }));
-        return el('div', { class: 'card rowcard slim' }, el('div', { class: 'grow' }, r.name, el('p', { class: 'muted small' }, guildWho(r))), yes, no);
+        return el('div', { class: 'card slim' }, el('div', { class: 'grow' }, r.name, el('p', { class: 'muted small' }, guildWho(r))), el('div', { class: 'btnrow', style: 'margin-top:10px' }, yes, no));
       })) : null,
 
     el('h2', {}, 'Состав'),
