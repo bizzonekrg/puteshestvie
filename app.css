@@ -313,3 +313,5 @@ select {
   background: var(--card); color: var(--text); font: inherit; font-size: 16px;
 }
 .tval.wallet { font-size: 16px; line-height: 1.35; overflow-wrap: anywhere; }
+
+.coinrest { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 14px; color: var(--muted); }
