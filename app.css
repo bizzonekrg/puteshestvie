@@ -316,3 +316,7 @@ select {
 
 .coincol { display: flex; flex-direction: column; gap: 2px; font-size: 18px; font-weight: 700; margin-bottom: 6px; }
 .grid2 > .card.tight > .mini.wide { margin-top: auto; }
+
+.btnrow { display: flex; gap: 8px; }
+.btnrow .mini { flex: 1 1 0; padding: 0 6px; }
+.card .title { overflow-wrap: break-word; }

@@ -875,12 +875,15 @@ function tabMagic(s, ro, editBtn) {
       const opened = c.open.has(i);
       const hp = hintParts('feature', f, 'ft:' + i);
       return el('div', { class: 'card' },
-        el('div', { class: 'cardhead' }, el('div', { class: 'title grow' }, f.name), hp.btn, editBtn('Изм.', () => featureForm(f, false))),
+        el('div', { class: 'title' }, f.name),
+        el('div', { class: 'btnrow' },
+          hp.btn,
+          f.text ? el('button', { class: opened ? 'mini solid' : 'mini', type: 'button', 'aria-expanded': String(opened), onclick: () => { if (opened) c.open.delete(i); else c.open.add(i); renderChar(); } }, 'Описание') : null,
+          editBtn('Изм.', () => featureForm(f, false))),
         hp.box,
         f.usesMax > 0 ? el('div', { class: 'cardhead' },
           el('p', { class: 'muted' }, `Осталось ${f.usesLeft} из ${f.usesMax}`),
           ro ? null : el('button', { class: 'mini solid', type: 'button', disabled: f.usesLeft <= 0, onclick: () => { f.usesLeft = Math.max(0, f.usesLeft - 1); changed(); } }, 'Применить')) : null,
-        f.text ? el('button', { class: 'mini wide', type: 'button', 'aria-expanded': String(opened), onclick: () => { if (opened) c.open.delete(i); else c.open.add(i); renderChar(); } }, opened ? 'Скрыть описание' : 'Показать описание') : null,
         opened ? f.text.split('\n').map((t) => el('p', { class: 'muted' }, t)) : null);
     }),
     ro ? null : el('button', { class: 'btn dashed', type: 'button', onclick: () => featureForm({ name: '', text: '', usesMax: 0, usesLeft: 0 }, true) }, '+ Добавить умение'),
