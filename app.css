@@ -291,3 +291,10 @@ textarea {
 .checkrow.strong { font-weight: 600; font-size: 16px; }
 
 .lrow.tap { width: 100%; min-height: 44px; align-items: center; padding: 4px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; font-size: 15px; text-align: left; }
+
+/* ---------- подсказки ---------- */
+.slimcard { gap: 8px; padding: 6px 8px 6px 16px; border-radius: 12px; }
+.hint { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; margin-right: 8px; margin-bottom: 6px; border-radius: 10px; border: 1px solid var(--gold); background: var(--bg); }
+.hint p { margin: 0; line-height: 1.45; color: #C9CCD4; }
+.hint strong { color: var(--text); }
+.card:not(.slimcard) > .hint { margin-right: 0; margin-bottom: 0; }

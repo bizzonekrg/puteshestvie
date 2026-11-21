@@ -145,7 +145,8 @@ function parseLss(fileText) {
   const spells = [];
   for (let l = 0; l <= 9; l++) {
     for (const line of docLinesOrHtml(textField(d, 'spells-level-' + l))) {
-      spells.push({ name: line.replace(/\s*\[[^\]]*\]\s*$/, '').trim() || line, level: l });
+      const en = (line.match(/\[([^\]]+)\]\s*$/) || [])[1] || '';
+      spells.push({ name: line.replace(/\s*\[[^\]]*\]\s*$/, '').trim() || line, level: l, en });
     }
   }
 
@@ -698,13 +699,31 @@ function tabMagic(s, ro, editBtn) {
         el('button', { class: 'mini solid', type: 'button', disabled: left <= 0, onclick: () => { sl.used = Math.min(sl.max, sl.used + 1); changed(); } }, 'Потратить')));
   });
 
+  // Подсказка: встроенная по правилам 2024 или своя, вписанная игроком
+  const hintParts = (kind, obj, key) => {
+    const opened = c.open.has(key);
+    const h = findHint(kind, obj);
+    const btn = el('button', { class: 'mini', type: 'button', 'aria-expanded': String(opened),
+      onclick: () => { if (opened) c.open.delete(key); else c.open.add(key); renderChar(); } }, opened ? 'Скрыть' : 'Подсказка');
+    let box = null;
+    if (opened) {
+      if (!h) box = el('div', { class: 'hint' }, el('p', { class: 'muted small' }, ro ? 'Подсказки пока нет.' : 'Встроенной подсказки для этого названия пока нет. Нажмите «Изм.» и впишите свою.'));
+      else if (h.own) box = el('div', { class: 'hint' }, h.text.split('\n').map((p) => el('p', { class: 'small' }, p)));
+      else box = el('div', { class: 'hint' },
+        el('p', { class: 'small' }, el('strong', {}, 'Что делает. '), h.what),
+        el('p', { class: 'small' }, el('strong', {}, 'Когда применять. '), h.when));
+    }
+    return { btn, box };
+  };
+
   const spellForm = (x, isNew) => openForm({
     title: isNew ? 'Новое заклинание' : 'Заклинание',
     fields: [
       { key: 'name', label: 'Название', value: x.name },
       { key: 'level', label: 'Уровень', numeric: true, value: x.level, hint: '0 — заговор' },
+      { key: 'hint', label: 'Своя подсказка (не обязательно)', area: true, value: x.hint || '', hint: 'Если заполнить, она заменит встроенную подсказку.' },
     ],
-    onSave: (v) => { x.name = v.name || 'Заклинание'; x.level = clamp(v.level, 0, 9); if (isNew) s.spells.push(x); changed(); },
+    onSave: (v) => { x.name = v.name || 'Заклинание'; x.level = clamp(v.level, 0, 9); x.hint = v.hint; if (isNew) s.spells.push(x); changed(); },
     onDelete: isNew ? null : () => { s.spells.splice(s.spells.indexOf(x), 1); changed(); },
   });
   const spellBlocks = [];
@@ -712,7 +731,12 @@ function tabMagic(s, ro, editBtn) {
     const list = s.spells.filter((x) => x.level === l);
     if (!list.length) continue;
     spellBlocks.push(el('h2', {}, l === 0 ? 'Заговоры' : `Заклинания ${l} уровня`));
-    for (const x of list) spellBlocks.push(el('div', { class: 'card rowcard slim' }, el('div', { class: 'grow' }, x.name), editBtn('Изм.', () => spellForm(x, false))));
+    for (const x of list) {
+      const hp = hintParts('spell', x, 'sp:' + s.spells.indexOf(x));
+      spellBlocks.push(el('div', { class: 'card slimcard' },
+        el('div', { class: 'cardhead' }, el('div', { class: 'grow' }, x.name), hp.btn, editBtn('Изм.', () => spellForm(x, false))),
+        hp.box));
+    }
   }
   if (!s.spells.length) spellBlocks.push(el('h2', {}, 'Заклинания'), el('p', { class: 'muted' }, 'Заклинаний пока нет.'));
   if (!ro) spellBlocks.push(el('button', { class: 'btn dashed', type: 'button', onclick: () => spellForm({ name: '', level: 1 }, true) }, '+ Добавить заклинание'));
@@ -723,9 +747,10 @@ function tabMagic(s, ro, editBtn) {
       { key: 'name', label: 'Название', value: f.name },
       { key: 'text', label: 'Описание', area: true, value: f.text },
       { key: 'usesMax', label: 'Сколько раз можно применить', numeric: true, value: f.usesMax || 0, hint: '0 — без счётчика. Счётчик восполняется после долгого отдыха.' },
+      { key: 'hint', label: 'Своя подсказка (не обязательно)', area: true, value: f.hint || '', hint: 'Если заполнить, она заменит встроенную подсказку.' },
     ],
     onSave: (v) => {
-      f.name = v.name || 'Умение'; f.text = v.text;
+      f.name = v.name || 'Умение'; f.text = v.text; f.hint = v.hint;
       const max = clamp(v.usesMax, 0, 99);
       f.usesLeft = isNew || max !== f.usesMax ? max : clamp(f.usesLeft, 0, max);
       f.usesMax = max;
@@ -739,8 +764,10 @@ function tabMagic(s, ro, editBtn) {
     s.features.length ? null : el('p', { class: 'muted' }, 'Умений пока нет.'),
     s.features.map((f, i) => {
       const opened = c.open.has(i);
+      const hp = hintParts('feature', f, 'ft:' + i);
       return el('div', { class: 'card' },
-        el('div', { class: 'cardhead' }, el('div', { class: 'title grow' }, f.name), editBtn('Изм.', () => featureForm(f, false))),
+        el('div', { class: 'cardhead' }, el('div', { class: 'title grow' }, f.name), hp.btn, editBtn('Изм.', () => featureForm(f, false))),
+        hp.box,
         f.usesMax > 0 ? el('div', { class: 'cardhead' },
           el('p', { class: 'muted' }, `Осталось ${f.usesLeft} из ${f.usesMax}`),
           ro ? null : el('button', { class: 'mini solid', type: 'button', disabled: f.usesLeft <= 0, onclick: () => { f.usesLeft = Math.max(0, f.usesLeft - 1); changed(); } }, 'Применить')) : null,
@@ -770,7 +797,8 @@ function tabMagic(s, ro, editBtn) {
         changed();
       } }, 'Долгий отдых')));
 
-  return [head, slots.length ? slots : el('p', { class: 'muted' }, 'Ячеек заклинаний нет.'), spellBlocks, features, rests];
+  return [head, slots.length ? slots : el('p', { class: 'muted' }, 'Ячеек заклинаний нет.'), spellBlocks, features, rests,
+    el('p', { class: 'muted small' }, 'Подсказки краткие и написаны по правилам 2024 года. Точный текст заклинания смотрите в книге правил.')];
 }
 
 // Вкладка «Группа»: в какой группе этот персонаж
