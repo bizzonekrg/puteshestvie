@@ -320,3 +320,6 @@ select {
 .btnrow { display: flex; gap: 8px; }
 .btnrow .mini { flex: 1 1 0; padding: 0 6px; }
 .card .title { overflow-wrap: break-word; }
+
+.grid2 > .card.tight { text-align: center; }
+.grid2 > .card.tight > .tval, .grid2 > .card.tight > .coincol { margin-top: auto; margin-bottom: auto; align-items: center; }
