@@ -900,7 +900,22 @@ function tabMagic(s, ro, editBtn) {
         } }, 'Добавить'),
         el('button', { class: 'mini', type: 'button', onclick: () => { mark(); changed(); } }, 'Не нужно')));
   }
-  const ruleLine = cd ? el('p', { class: 'muted small' }, `По правилам на ${s.level} уровне: ${cd.rule(s.level)}.`) : null;
+  // Ячейки, положенные классу на этом уровне: массив по уровням ячеек или null, если класс не колдует
+  const ruleSlots = (() => {
+    const n = Math.min(20, Math.max(1, s.level)), cls = s.cls || '';
+    if (/колдун/i.test(cls)) { const a = []; a[Math.min(5, Math.ceil(n / 2)) - 1] = n >= 17 ? 4 : n >= 11 ? 3 : n >= 2 ? 2 : 1; return Array.from(a, (x) => x || 0); }
+    if (/бард|жрец|клирик|друид|чародей|волшебник/i.test(cls)) return BARD_SLOTS[n - 1];
+    if (/паладин|следопыт|рейнджер/i.test(cls)) return HALF_SLOTS[n - 1];
+    return null;
+  })();
+  const slotsDiffer = ruleSlots && [1, 2, 3, 4, 5, 6, 7, 8, 9].some((l) => ((sp.slots.find((x) => x.level === l) || {}).max || 0) !== (ruleSlots[l - 1] || 0));
+  const ruleLine = cd ? [
+    el('p', { class: 'muted small' }, `По правилам на ${s.level} уровне: ${cd.rule(s.level)}.`),
+    !ro && slotsDiffer ? el('button', { class: 'mini solid wide', type: 'button', onclick: () => {
+      sp.slots = ruleSlots.map((max, i) => ({ level: i + 1, max, used: 0 })).filter((x) => x.max > 0);
+      changed();
+    } }, 'Поставить ячейки по правилам') : null,
+  ] : null;
 
   const features = [
     el('h2', {}, 'Умения'),
