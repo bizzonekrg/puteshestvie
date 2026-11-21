@@ -820,8 +820,53 @@ function tabMagic(s, ro, editBtn) {
     },
     onDelete: isNew ? null : () => { s.features.splice(s.features.indexOf(f), 1); changed(); },
   });
+  // Коллегия барда: выбор на 3 уровне, умения добавляются в лист сами
+  const isBard = /бард/i.test(s.cls || '');
+  const college = COLLEGES.find((x) => x.key === s.college) || null;
+  const collegeMissing = (col) => {
+    const done = new Set((s.collegeAdded || []).map(hintKey));
+    const ft = col.features.filter(([lv, n]) => lv <= s.level && !done.has(hintKey(n)) && !s.features.some((f) => hintKey(f.name) === hintKey(n)));
+    const spl = col.spells.filter(([lv, n]) => lv <= s.level && !done.has(hintKey(n)) && !s.spells.some((x) => hintKey(x.name) === hintKey(n)));
+    return { ft, spl };
+  };
+  const collegeApply = (col) => {
+    const m = collegeMissing(col);
+    s.college = col.key;
+    s.collegeAdded = s.collegeAdded || [];
+    for (const [, n] of m.ft) { s.features.push({ name: n, text: col.name, usesMax: 0, usesLeft: 0 }); s.collegeAdded.push(n); }
+    for (const [, n, lvl, en] of m.spl) { s.spells.push({ name: n, level: lvl, en }); s.collegeAdded.push(n); }
+    changed();
+  };
+  let collegeCard = null;
+  if (isBard && !ro && s.level >= 3 && !college) {
+    collegeCard = el('div', { class: 'card notice' },
+      el('div', { class: 'title' }, 'Выберите коллегию'),
+      el('p', { class: 'muted' }, 'На 3 уровне бард выбирает коллегию. Посоветуйтесь с ведущим. Умения коллегии с подсказками добавятся в лист сами.'),
+      COLLEGES.map((col) => el('button', { class: 'pick', type: 'button', onclick: () => {
+        if (window.confirm(col.name + ' — выбрать?')) collegeApply(col);
+      } }, el('div', { class: 'title' }, col.name), el('div', { class: 'muted' }, col.about))));
+  } else if (isBard && !ro && college) {
+    const m = collegeMissing(college);
+    const names = m.ft.concat(m.spl).map((x) => x[1]);
+    collegeCard = names.length
+      ? el('div', { class: 'card notice' },
+        el('div', { class: 'title' }, 'Новое от коллегии'),
+        el('p', { class: 'muted' }, college.name + ': ' + names.join(', ') + '.'),
+        el('button', { class: 'mini solid wide', type: 'button', onclick: () => collegeApply(college) }, 'Добавить в лист'))
+      : null;
+  }
+  const collegeChange = isBard && !ro && college ? el('button', { class: 'btn link', type: 'button', onclick: () => {
+    if (!window.confirm(college.name + ': убрать её умения из листа и выбрать коллегию заново?')) return;
+    const added = new Set((s.collegeAdded || []).map(hintKey));
+    s.features = s.features.filter((f) => !added.has(hintKey(f.name)));
+    s.spells = s.spells.filter((x) => !added.has(hintKey(x.name)));
+    s.college = ''; s.collegeAdded = [];
+    changed();
+  } }, 'Сменить коллегию (' + college.name + ')') : null;
+
   const features = [
     el('h2', {}, 'Умения'),
+    collegeCard,
     s.features.length ? null : el('p', { class: 'muted' }, 'Умений пока нет.'),
     s.features.map((f, i) => {
       const opened = c.open.has(i);
@@ -836,6 +881,7 @@ function tabMagic(s, ro, editBtn) {
         opened ? f.text.split('\n').map((t) => el('p', { class: 'muted' }, t)) : null);
     }),
     ro ? null : el('button', { class: 'btn dashed', type: 'button', onclick: () => featureForm({ name: '', text: '', usesMax: 0, usesLeft: 0 }, true) }, '+ Добавить умение'),
+    collegeChange,
   ];
 
   const isWarlock = /колдун/i.test(s.cls || '');
