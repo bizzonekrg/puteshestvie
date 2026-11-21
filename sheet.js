@@ -280,7 +280,76 @@ function showUpload(profile) {
     input,
     el('label', { for: 'lssfile', class: 'btn' }, 'Выбрать файл LSS'),
     err.node,
+    el('div', { class: 'card' },
+      el('div', { class: 'title' }, 'Нет файла LSS?'),
+      el('p', { class: 'muted' }, 'Персонажа можно внести вручную, например по листу PDF: сначала основное, остальное допишете в листе.'),
+      el('button', { class: 'btn outline', type: 'button', onclick: () => showManual(profile) }, 'Внести персонажа вручную')),
     el('button', { class: 'btn outline spacer', type: 'button', onclick: () => route() }, 'Назад'));
+}
+
+// Список навыков для персонажа, созданного вручную
+const DEFAULT_SKILLS = [
+  ['Акробатика', 'dex'], ['Анализ', 'int'], ['Аркана', 'int'], ['Атлетика', 'str'], ['Внимательность', 'wis'], ['Выживание', 'wis'],
+  ['Выступление', 'cha'], ['Запугивание', 'cha'], ['История', 'int'], ['Ловкость рук', 'dex'], ['Медицина', 'wis'], ['Обман', 'cha'],
+  ['Природа', 'int'], ['Проницательность', 'wis'], ['Религия', 'int'], ['Скрытность', 'dex'], ['Убеждение', 'cha'], ['Уход за животными', 'wis'],
+];
+
+function showManual(profile) {
+  const err = errorBox();
+  const f = (id, label, placeholder, numeric, value) => {
+    const input = el('input', { id, type: 'text', inputmode: numeric ? 'numeric' : null, placeholder, autocomplete: 'off' });
+    if (value !== undefined) input.value = String(value);
+    return { input, node: el('div', { class: 'field' }, el('label', { for: id }, label), input) };
+  };
+  const name = f('mn', 'Имя персонажа', 'Как зовут персонажа', false);
+  const cls = f('mc', 'Класс', 'Например: Воин', false);
+  const species = f('ms', 'Вид', 'Например: Человек', false);
+  const level = f('ml', 'Уровень', '1', true, 1);
+  const hp = f('mh', 'Хиты (максимум)', '10', true);
+  const ac = f('ma', 'КД', '10', true, 10);
+  const speed = f('mv', 'Скорость, фт', '30', true, 30);
+  const stats = STAT_KEYS.map((k) => Object.assign(f('mst' + k, STAT_FULL[k], '10', true, 10), { k }));
+
+  const save = el('button', { class: 'btn', type: 'button' }, 'Создать персонажа');
+  save.addEventListener('click', async () => {
+    err.set('');
+    const nm = name.input.value.trim();
+    if (nm.length < 2) return err.set('Впишите имя персонажа.');
+    const lvl = clamp(toInt(level.input.value, 1), 1, 20);
+    const hpMax = Math.max(1, toInt(hp.input.value, 0));
+    if (!toInt(hp.input.value, 0)) return err.set('Впишите хиты персонажа.');
+    const st = {};
+    for (const x of stats) st[x.k] = clamp(toInt(x.input.value, 10), 1, 30);
+    const prof = 2 + Math.floor((lvl - 1) / 4);
+    const s = {
+      v: 1, name: nm.slice(0, 80), cls: cls.input.value.trim(), species: species.input.value.trim(),
+      background: '', alignment: '', level: lvl, xp: 0, portrait: '',
+      hp: { cur: hpMax, max: hpMax, temp: 0 }, ac: toInt(ac.input.value, 10), speed: Math.max(0, toInt(speed.input.value, 30)),
+      hitDie: '', prof, stats: st,
+      saves: { str: false, dex: false, con: false, int: false, wis: false, cha: false },
+      skills: DEFAULT_SKILLS.map(([label, stat]) => ({ label, stat, prof: 0 })),
+      weapons: [], gold: 0, items: [],
+      spell: { dc: 8 + prof, atk: prof, slots: [] }, spells: [], features: [], profText: '',
+    };
+    await busy(save, 'Создаём…', async () => {
+      const { data, error } = await sb.from('characters').insert({
+        owner_id: profile.id, name: s.name, class_name: s.cls, species: s.species, level: s.level, sheet: s,
+      }).select('id').single();
+      if (error || !data) return err.set('Не получилось создать персонажа. Попробуйте ещё раз.');
+      await openCharacter(profile, data.id, 'main');
+    });
+  });
+
+  show(false,
+    el('div', { class: 'head' },
+      el('h1', { class: 'small' }, 'Персонаж вручную'),
+      el('p', { class: 'muted' }, 'Впишите основное с листа. Владения, оружие, вещи, заклинания и умения добавите потом в самом листе.')),
+    el('div', { class: 'card' }, name.node, cls.node, species.node,
+      el('div', { class: 'grid2' }, level.node, hp.node), el('div', { class: 'grid2' }, ac.node, speed.node)),
+    el('div', { class: 'card' }, el('div', { class: 'title' }, 'Характеристики'), el('p', { class: 'muted' }, 'Вписывайте само значение (например 16), а не модификатор.'),
+      el('div', { class: 'grid2' }, stats.map((x) => x.node))),
+    err.node, save,
+    el('button', { class: 'btn outline', type: 'button', onclick: () => showUpload(profile) }, 'Назад'));
 }
 
 function showReview(profile, parsed) {
@@ -479,12 +548,20 @@ function tabMain(s, ro, editBtn) {
     el('div', { class: 'tval big2' }, signed(modOf(s.stats[k]))),
     el('div', { class: 'muted small' }, String(s.stats[k])))));
 
-  const listRow = (mark, label, value) => el('div', { class: 'lrow' }, el('span', {}, (mark ? '● ' : '○ ') + label), el('strong', {}, value));
-  const saves = el('div', { class: 'card' }, el('div', { class: 'title' }, 'Спасброски'),
-    STAT_KEYS.map((k) => listRow(s.saves[k], STAT_FULL[k], signed(modOf(s.stats[k]) + (s.saves[k] ? s.prof : 0)))),
+  // в режиме правки строка становится кнопкой: нажатие меняет владение
+  const editing = !ro && CH.editProf;
+  const mark = (p) => (p >= 2 ? '●● ' : p >= 1 ? '● ' : '○ ');
+  const listRow = (p, label, value, onTap) => (editing
+    ? el('button', { class: 'lrow tap', type: 'button', onclick: onTap }, el('span', {}, mark(p) + label), el('strong', {}, value))
+    : el('div', { class: 'lrow' }, el('span', {}, mark(p) + label), el('strong', {}, value)));
+  const profToggle = ro ? null : el('button', { class: 'mini', type: 'button', onclick: () => { CH.editProf = !CH.editProf; renderChar(); } }, editing ? 'Готово' : 'Изменить');
+  const saves = el('div', { class: 'card' }, el('div', { class: 'cardhead' }, el('div', { class: 'title' }, 'Спасброски'), profToggle),
+    editing ? el('p', { class: 'muted small' }, 'Нажмите на строку, чтобы поставить или снять владение.') : null,
+    STAT_KEYS.map((k) => listRow(s.saves[k] ? 1 : 0, STAT_FULL[k], signed(modOf(s.stats[k]) + (s.saves[k] ? s.prof : 0)), () => { s.saves[k] = !s.saves[k]; changed(); })),
     el('p', { class: 'muted small' }, `● — владение. Бонус мастерства ${signed(s.prof)}`));
   const skills = el('div', { class: 'card' }, el('div', { class: 'title' }, 'Навыки'),
-    s.skills.map((sk) => listRow(sk.prof > 0, `${sk.label} (${STAT_SHORT[sk.stat]})`, signed(skillBonus(s, sk)))));
+    editing ? el('p', { class: 'muted small' }, 'Нажатие по кругу: нет владения → владение (●) → экспертиза (●●).') : null,
+    s.skills.map((sk) => listRow(sk.prof || 0, `${sk.label} (${STAT_SHORT[sk.stat]})`, signed(skillBonus(s, sk)), () => { sk.prof = ((sk.prof || 0) + 1) % 3; changed(); })));
 
   const passive = (word) => {
     const sk = s.skills.find((x) => x.label.toLowerCase().startsWith(word));

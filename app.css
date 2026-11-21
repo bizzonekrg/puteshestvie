@@ -289,3 +289,5 @@ textarea {
 .choice.three button { font-size: 14px; }
 .results { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; padding-right: 2px; }
 .checkrow.strong { font-weight: 600; font-size: 16px; }
+
+.lrow.tap { width: 100%; min-height: 44px; align-items: center; padding: 4px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; font-size: 15px; text-align: left; }
