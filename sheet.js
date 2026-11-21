@@ -1061,13 +1061,13 @@ function openSpellPicker(s) {
   const counter = el('p', { class: 'muted small' });
   const search = el('input', { id: 'spq', type: 'text', placeholder: 'Например: огненный, лечение', autocomplete: 'off' });
   const results = el('div', { class: 'results' });
-  const status = el('p', { class: 'muted' }, 'Нажмите на заклинание, чтобы добавить его в лист.');
+  const status = el('p', { class: 'muted small' }, 'Нажмите на заклинание, чтобы добавить его в лист.');
   const chips = el('div', { class: 'chips' });
   const draw = () => {
     chips.replaceChildren(...[-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => el('button', { class: 'chipbtn', type: 'button', 'aria-pressed': String(level === n),
       onclick: () => { level = n; draw(); } }, n < 0 ? 'Все' : n === 0 ? 'Заговоры' : String(n))));
     const ct = spellCountText(s);
-    counter.textContent = ct ? 'По правилам: ' + ct + '. Заклинания подкласса в счёт не идут.' : '';
+    counter.textContent = ct ? 'По правилам: ' + ct + '.' : '';
     if (pending) {
       const isC = pending.level === 0, mineList = ownSpells(s, isC);
       results.replaceChildren(
@@ -1096,11 +1096,12 @@ function openSpellPicker(s) {
   };
   search.addEventListener('input', draw);
   draw();
-  const box = el('div', { class: 'modal stack' },
-    el('div', { class: 'title' }, 'Заклинание из справочника'),
-    el('div', { class: 'field' }, el('label', { for: 'spq' }, 'Поиск по названию'), search),
-    counter, chips, results, status,
-    el('button', { class: 'btn', type: 'button', onclick: close }, 'Готово'));
+  search.setAttribute('aria-label', 'Поиск по названию');
+  search.placeholder = 'Поиск: огненный, лечение';
+  const box = el('div', { class: 'modal stack full fixed' },
+    el('div', { class: 'cardhead' }, el('div', { class: 'title' }, 'Справочник заклинаний'),
+      el('button', { class: 'mini solid', type: 'button', onclick: close }, 'Готово')),
+    search, chips, counter, results, status);
   back.addEventListener('click', (e) => { if (e.target === back) close(); });
   back.append(box);
   document.body.append(back);

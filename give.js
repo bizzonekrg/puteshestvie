@@ -98,7 +98,7 @@ function openGiftModal(onPick, own) {
   const close = () => back.remove();
   const picker = giftPicker(false, own);
   const err = errorBox();
-  const box = el('div', { class: 'modal stack' },
+  const box = el('div', { class: 'modal stack' + (own ? ' full' : '') },
     el('div', { class: 'title' }, own ? 'Добавить в свои вещи' : 'Предмет в награду'),
     picker.node, err.node,
     el('button', { class: 'btn', type: 'button', onclick: () => {

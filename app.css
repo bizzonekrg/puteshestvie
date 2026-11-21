@@ -334,3 +334,12 @@ select {
 .pick:disabled { opacity: .5; }
 
 .warn { color: var(--gold); margin: 0; }
+
+/* окно на весь экран: справочник заклинаний и список вещей */
+.modal.full { height: 100vh; height: 100dvh; max-height: 100dvh; max-width: 520px; border-radius: 0; border-top: 0; padding-top: calc(14px + env(safe-area-inset-top)); }
+.modal.full .results { max-height: 46vh; max-height: 46dvh; }
+.modal.full.fixed { overflow: hidden; gap: 10px; }
+.modal.full.fixed > * { flex: 0 0 auto; }
+.modal.full.fixed > .results { flex: 1 1 0; min-height: 0; max-height: none; }
+.modal.full .title { font-size: 20px; }
+.chips { flex: 0 0 auto; align-items: center; min-height: 44px; }
