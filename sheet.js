@@ -497,7 +497,16 @@ function renderChar() {
   else if (c.tab === 'magic') body = tabMagic(s, ro, editBtn);
   else body = tabGroup(c, ro);
 
-  const tab = (key, label) => el('button', { type: 'button', 'aria-current': c.tab === key ? 'page' : null, onclick: () => { c.tab = key; renderChar(); window.scrollTo(0, 0); } }, label);
+  const tab = (key, label) => el('button', { type: 'button', 'aria-current': c.tab === key ? 'page' : null, onclick: () => {
+    // чужой персонаж: вкладка «Группа» уводит из листа — ведущего к списку его групп, игрока обратно в группу
+    if (key === 'group' && ro) {
+      const goBack = c.profile.role === 'master' ? null : c.back;
+      CH = null;
+      if (goBack) goBack(); else route();
+      return;
+    }
+    c.tab = key; renderChar(); window.scrollTo(0, 0);
+  } }, label);
   const notices = c.notices.map((n) => el('div', { class: 'card notice' },
     el('div', { class: 'title' }, 'Ведущий выдал'),
     el('p', {}, n.title),
