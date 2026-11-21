@@ -451,12 +451,12 @@ function tabMain(s, ro, editBtn) {
 
   const numCard = (label, value, title, key, suffix) => el('div', { class: 'card tight' },
     el('div', { class: 'label' }, label),
-    el('div', { class: 'cardhead' }, el('span', { class: 'tval' }, value),
-      editBtn('Изменить', () => openForm({
-        title,
-        fields: [{ key: 'v', label: title + (suffix ? `, ${suffix}` : ''), numeric: true, value: s[key], fallback: s[key] }],
-        onSave: (v) => { s[key] = Math.max(0, v.v); changed(); },
-      }))));
+    el('div', { class: 'tval nowrap' }, value),
+    ro ? null : el('button', { class: 'mini wide', type: 'button', onclick: () => openForm({
+      title,
+      fields: [{ key: 'v', label: title + (suffix ? `, ${suffix}` : ''), numeric: true, value: s[key], fallback: s[key] }],
+      onSave: (v) => { s[key] = Math.max(0, v.v); changed(); },
+    }) }, 'Изменить'));
   const row2 = el('div', { class: 'grid2' }, numCard('Опыт', String(s.xp), 'Опыт', 'xp'), numCard('Золото', `${s.gold} зм`, 'Золото', 'gold', 'зм'));
 
   const statsGrid = el('div', { class: 'grid3' }, STAT_KEYS.map((k) => el('div', { class: 'tile' },

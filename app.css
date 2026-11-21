@@ -280,3 +280,5 @@ textarea {
 .scores { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 .scores button { height: 56px; border-radius: 12px; border: 2px solid var(--line); background: var(--bg); color: var(--text); font-size: 20px; font-weight: 700; }
 .scores button[aria-pressed="true"] { border-color: var(--gold); background: var(--gold); color: var(--gold-ink); }
+
+.card.tight .mini.wide { margin-top: 6px; }
