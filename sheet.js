@@ -911,6 +911,7 @@ function tabMagic(s, ro, editBtn) {
   const slotsDiffer = ruleSlots && [1, 2, 3, 4, 5, 6, 7, 8, 9].some((l) => ((sp.slots.find((x) => x.level === l) || {}).max || 0) !== (ruleSlots[l - 1] || 0));
   const ruleLine = cd ? [
     el('p', { class: 'muted small' }, `По правилам на ${s.level} уровне: ${cd.rule(s.level)}.`),
+    spellCountText(s) ? el('p', { class: 'muted small' }, 'Сейчас в листе: ' + spellCountText(s) + '.') : null,
     !ro && slotsDiffer ? el('button', { class: 'mini solid wide', type: 'button', onclick: () => {
       sp.slots = ruleSlots.map((max, i) => ({ level: i + 1, max, used: 0 })).filter((x) => x.max > 0);
       changed();
@@ -996,6 +997,34 @@ function tabGroup(c, ro) {
     el('button', { class: 'btn', type: 'button', onclick: () => go(() => showGroups(c.profile)) }, 'Вступить или создать группу'))];
 }
 
+// ---------- сколько заклинаний положено по правилам ----------
+
+// Возвращает { spell, cantrip, maxLv } или null, если класс не колдует. null внутри — без ограничения.
+function spellLimits(s) {
+  const n = Math.min(20, Math.max(1, toInt(s.level, 1))), cls = s.cls || '', i = n - 1;
+  const step = (a, b, c) => (n >= 10 ? c : n >= 4 ? b : a);
+  if (/колдун/i.test(cls)) return { spell: WARLOCK_PREP[i], cantrip: step(2, 3, 4), maxLv: Math.min(5, Math.ceil(n / 2)) };
+  if (/бард/i.test(cls)) return { spell: BARD_PREP[i], cantrip: step(2, 3, 4), maxLv: BARD_SLOTS[i].length };
+  if (/жрец|клирик/i.test(cls)) return { spell: BARD_PREP[i], cantrip: step(3, 4, 5), maxLv: BARD_SLOTS[i].length };
+  if (/друид/i.test(cls)) return { spell: BARD_PREP[i], cantrip: step(2, 3, 4), maxLv: BARD_SLOTS[i].length };
+  if (/чародей/i.test(cls)) return { spell: SORC_PREP[i], cantrip: step(4, 5, 6), maxLv: BARD_SLOTS[i].length };
+  if (/волшебник/i.test(cls)) return { spell: null, cantrip: step(3, 4, 5), maxLv: BARD_SLOTS[i].length };
+  if (/паладин/i.test(cls)) return { spell: HALF_PREP_PAL[i], cantrip: null, maxLv: HALF_SLOTS[i].length };
+  if (/следопыт|рейнджер/i.test(cls)) return { spell: HALF_PREP_RNG[i], cantrip: null, maxLv: HALF_SLOTS[i].length };
+  return null;
+}
+// Свои заклинания — без тех, что дал подкласс (они в счёт не идут)
+function ownSpells(s, cantrips) {
+  const given = new Set((s.collegeAdded || []).map(hintKey));
+  return s.spells.filter((x) => (cantrips ? x.level === 0 : x.level > 0) && !given.has(hintKey(x.name)));
+}
+function spellCountText(s) {
+  const lim = spellLimits(s);
+  if (!lim) return '';
+  const part = (label, have, max) => (max == null ? '' : `${label} ${have} из ${max}`);
+  return [part('своих заклинаний', ownSpells(s, false).length, lim.spell), part('заговоров', ownSpells(s, true).length, lim.cantrip)].filter(Boolean).join(' · ');
+}
+
 // ---------- выбор заклинания из справочника ----------
 
 function openSpellPicker(s) {
@@ -1004,6 +1033,17 @@ function openSpellPicker(s) {
   const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
   const has = (h) => s.spells.some((x) => h.names.some((n) => hintKey(n) === hintKey(x.name)) || (x.en && hintKey(x.en) === hintKey(h.en)));
   let level = -1;
+  let pending = null; // заклинание, которое не помещается в положенное число
+  const lim = spellLimits(s);
+  const add = (h, instead) => {
+    if (instead) s.spells.splice(s.spells.indexOf(instead), 1);
+    s.spells.push({ name: cap(h.names[0]), level: h.level, en: h.en });
+    pending = null;
+    changed();
+    status.textContent = (instead ? `Заменено: ${instead.name} → ` : 'Добавлено: ') + cap(h.names[0]);
+    draw();
+  };
+  const counter = el('p', { class: 'muted small' });
   const search = el('input', { id: 'spq', type: 'text', placeholder: 'Например: огненный, лечение', autocomplete: 'off' });
   const results = el('div', { class: 'results' });
   const status = el('p', { class: 'muted' }, 'Нажмите на заклинание, чтобы добавить его в лист.');
@@ -1011,15 +1051,28 @@ function openSpellPicker(s) {
   const draw = () => {
     chips.replaceChildren(...[-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => el('button', { class: 'chipbtn', type: 'button', 'aria-pressed': String(level === n),
       onclick: () => { level = n; draw(); } }, n < 0 ? 'Все' : n === 0 ? 'Заговоры' : String(n))));
+    const ct = spellCountText(s);
+    counter.textContent = ct ? 'По правилам: ' + ct + '. Заклинания подкласса в счёт не идут.' : '';
+    if (pending) {
+      const isC = pending.level === 0, mineList = ownSpells(s, isC);
+      results.replaceChildren(
+        el('p', {}, `${isC ? 'Заговоров' : 'Своих заклинаний'} уже ${mineList.length} из ${isC ? lim.cantrip : lim.spell}. Чтобы взять «${cap(pending.names[0])}», замените одно из своих:`),
+        ...mineList.map((x) => el('button', { class: 'pick', type: 'button', onclick: () => add(pending, x) },
+          el('span', { class: 'title' }, 'Заменить: ' + x.name), el('span', { class: 'muted' }, x.level === 0 ? 'Заговор' : x.level + ' ур.'))),
+        el('button', { class: 'mini wide', type: 'button', onclick: () => add(pending) }, 'Добавить сверх счёта'),
+        el('p', { class: 'muted small' }, 'Сверх счёта — только если заклинание дала черта, вид или предмет.'),
+        el('button', { class: 'btn link', type: 'button', onclick: () => { pending = null; draw(); } }, 'Отмена'));
+      return;
+    }
     const q = hintKey(search.value);
     const list = SPELL_HINTS.filter((h) => (level < 0 || h.level === level) && (!q || h.names.some((n) => hintKey(n).includes(q))));
     results.replaceChildren(...(list.length ? list.slice(0, 60).map((h) => {
       const mine = has(h);
       return el('button', { class: 'pick', type: 'button', disabled: mine, onclick: () => {
-        s.spells.push({ name: cap(h.names[0]), level: h.level, en: h.en });
-        changed();
-        status.textContent = 'Добавлено: ' + cap(h.names[0]);
-        draw();
+        const isC = h.level === 0, max = lim ? (isC ? lim.cantrip : lim.spell) : null;
+        if (lim && h.level > lim.maxLv) { status.textContent = `${cap(h.names[0])} — ${h.level} уровня, а у вас пока ячейки только до ${lim.maxLv} уровня.`; return; }
+        if (max != null && ownSpells(s, isC).length >= max) { pending = h; draw(); return; }
+        add(h);
       } },
         el('span', { class: 'title' }, cap(h.names[0]) + (mine ? ' — уже в листе' : '')),
         el('span', { class: 'muted' }, (h.level === 0 ? 'Заговор' : h.level + ' ур.') + ' · ' + h.meta));
@@ -1031,7 +1084,7 @@ function openSpellPicker(s) {
   const box = el('div', { class: 'modal stack' },
     el('div', { class: 'title' }, 'Заклинание из справочника'),
     el('div', { class: 'field' }, el('label', { for: 'spq' }, 'Поиск по названию'), search),
-    chips, results, status,
+    counter, chips, results, status,
     el('button', { class: 'btn', type: 'button', onclick: close }, 'Готово'));
   back.addEventListener('click', (e) => { if (e.target === back) close(); });
   back.append(box);
