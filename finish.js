@@ -8,8 +8,7 @@ function showFinish(profile, gid, d) {
   const rows = (d.members || []).map((m, i) => {
     const input = (id, placeholder, numeric) => el('input', { id: id + i, type: 'text', inputmode: numeric ? 'numeric' : null, placeholder, autocomplete: 'off' });
     const xp = input('fxp', '+0', true);
-    const gold = input('fgp', '+0', true);
-    const coin = coinSelect('fcn' + i);
+    const coins = coinInputs('fc' + i);
     const level = el('input', { id: 'flv' + i, type: 'checkbox', class: 'check' });
     // предмет выбирается из списка или создаётся свой — во всплывающем окне
     const row = { gift: null };
@@ -29,14 +28,13 @@ function showFinish(profile, gid, d) {
       giftDrop.hidden = true;
     });
     return Object.assign(row, {
-      m, xp, gold, coin, level,
+      m, xp, coins, level,
       node: el('div', { class: 'card' },
         el('div', { class: 'title' }, m.character),
         el('p', { class: 'muted' }, `${m.class_name || 'Персонаж'} · ${m.level} ур. · игрок: ${m.name}`),
-        el('div', { class: 'grid2' },
-          el('div', { class: 'field' }, el('label', { for: 'fxp' + i }, 'Опыт'), xp),
-          el('div', { class: 'field' }, el('label', { for: 'fgp' + i }, 'Монеты'), gold)),
-        el('div', { class: 'field' }, el('label', { for: 'fcn' + i }, 'Какие монеты'), coin),
+        el('div', { class: 'field' }, el('label', { for: 'fxp' + i }, 'Опыт'), xp),
+        el('div', { class: 'label' }, 'Монеты (один вид или несколько)'),
+        coins.node,
         giftText, giftBtn, giftDrop,
         el('label', { class: 'checkrow', for: 'flv' + i }, level, 'Повысить уровень')),
     });
@@ -49,8 +47,7 @@ function showFinish(profile, gid, d) {
     const rewards = rows.map((r) => ({
       character_id: r.m.character_id,
       xp: Math.max(0, toInt(r.xp.value, 0)),
-      gold: Math.max(0, toInt(r.gold.value, 0)),
-      coin: r.coin.value,
+      coins: r.coins.read(),
       gift: r.gift,
       level_up: r.level.checked,
     }));
@@ -80,7 +77,11 @@ function showFinish(profile, gid, d) {
 function showReward(profile, r, moreCount) {
   const err = errorBox();
   const line = (a, b) => el('div', { class: 'kv' }, el('span', { class: 'muted' }, a), el('strong', {}, b));
-  const empty = !r.xp && !r.gold && !r.item && !r.level_up;
+  // монеты награды: новый набор из нескольких видов плюс старое одиночное поле
+  const got = Object.assign({}, r.coins || {});
+  if (r.gold) got[r.coin || 'gp'] = toInt(got[r.coin || 'gp'], 0) + toInt(r.gold, 0);
+  const gotText = coinsText(got);
+  const empty = !r.xp && !gotText && !r.item && !r.level_up;
   const accept = el('button', { class: 'btn', type: 'button' }, 'Принять награду');
   accept.addEventListener('click', async () => {
     err.set('');
@@ -98,7 +99,7 @@ function showReward(profile, r, moreCount) {
     el('div', { class: 'card notice' },
       el('div', { class: 'title' }, r.character),
       line('Опыт', `+${r.xp}`),
-      line('Монеты', `+${r.gold} ${coinLabel(r.coin)}`),
+      line('Монеты', gotText ? `+ ${gotText}` : '—'),
       line('Предмет', r.item || '—'),
       line('Уровень', r.level_up ? `повышение до ${Math.min(20, (r.level || 1) + 1)}` : 'без изменений'),
       empty ? el('p', { class: 'muted' }, 'В этот раз ведущий ничего не выдал.') : null),

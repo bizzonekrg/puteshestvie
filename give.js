@@ -48,11 +48,10 @@ function giftPicker(allowGold) {
     el('div', { class: 'field' }, el('label', { for: 'oq' + uid }, 'Сколько штук каждому'), oqty));
 
   // золото
-  const gold = inp('gg', '+0', true);
-  const coin = coinSelect('gc' + uid);
+  const coins = coinInputs('gc' + uid);
   const goldBox = el('div', { class: 'stack', hidden: true },
-    el('div', { class: 'field' }, el('label', { for: 'gg' + uid }, 'Сколько монет каждому'), gold),
-    el('div', { class: 'field' }, el('label', { for: 'gc' + uid }, 'Какие монеты'), coin));
+    el('p', { class: 'muted' }, 'Сколько монет каждому. Заполните один вид или сразу несколько.'),
+    coins.node);
 
   const tabs = [['list', 'Из списка', listBox], ['own', 'Свой', ownBox]].concat(allowGold ? [['gold', 'Монеты', goldBox]] : []);
   const buttons = tabs.map(([key, label]) => {
@@ -69,23 +68,26 @@ function giftPicker(allowGold) {
       el('div', { class: 'label' }, 'Что выдаём'),
       el('div', { class: 'choice' + (allowGold ? ' three' : '') }, buttons),
       listBox, ownBox, goldBox),
-    // Возвращает { gift } или { error }
+    // Возвращает { gifts: [...], label } или { error }. У монет подарков столько, сколько видов заполнено.
     read() {
       if (mode === 'gold') {
-        const g = toInt(gold.value, 0);
-        if (g < 1) return { error: 'Впишите, сколько монет выдать.' };
-        return { gift: { kind: 'gold', gold: g, coin: coin.value }, label: `Монеты: ${g} ${coinLabel(coin.value)}` };
+        const c = coins.read();
+        const kinds = Object.keys(c);
+        if (!kinds.length) return { error: 'Впишите, сколько монет выдать.' };
+        return { gifts: kinds.map((k) => ({ kind: 'gold', gold: c[k], coin: k })), label: `Монеты: ${coinsText(c)}` };
       }
       if (mode === 'own') {
         const name = oname.value.trim();
         if (!name) return { error: 'Впишите название предмета.' };
         const dmg = odmg.value.trim();
         const n = Math.max(1, toInt(oqty.value, 1));
-        return { gift: { kind: dmg ? 'weapon' : 'item', name, dmg, descr: odesc.value.trim(), qty: n, ability: 'best' }, label: name };
+        const own = { kind: dmg ? 'weapon' : 'item', name, dmg, descr: odesc.value.trim(), qty: n, ability: 'best' };
+        return { gift: own, gifts: [own], label: name };
       }
       if (!chosen) return { error: 'Выберите предмет из списка.' };
       const n = Math.max(1, toInt(qty.value, 1));
-      return { gift: { kind: chosen.kind, name: chosen.name, dmg: chosen.dmg, props: chosen.props, descr: chosen.descr, ability: chosen.ability || 'best', qty: n }, label: chosen.name };
+      const fromList = { kind: chosen.kind, name: chosen.name, dmg: chosen.dmg, props: chosen.props, descr: chosen.descr, ability: chosen.ability || 'best', qty: n };
+      return { gift: fromList, gifts: [fromList], label: chosen.name };
     },
   };
 }
@@ -136,8 +138,17 @@ function showGive(profile, gid, d) {
     const ids = boxes.filter((b) => b.cb.checked).map((b) => b.m.character_id);
     if (!ids.length) return err.set('Отметьте хотя бы одного персонажа.');
     await busy(submit, 'Выдаём…', async () => {
-      const { data, error } = await sb.rpc('give_gift', { p_group: gid, p_characters: ids, p_gift: r.gift });
-      if (error) return err.set(rpcError(error));
+      let data = 0;
+      let done = 0;
+      for (const gift of r.gifts) {
+        const res = await sb.rpc('give_gift', { p_group: gid, p_characters: ids, p_gift: gift });
+        if (res.error) {
+          // часть могла уже уйти игрокам — говорим об этом прямо, чтобы ведущий не выдал дважды
+          return err.set(rpcError(res.error) + (done ? ` Часть уже выдана: ${done} из ${r.gifts.length}. Не повторяйте выдачу целиком.` : ''));
+        }
+        data = res.data;
+        done++;
+      }
       show(true,
         el('div', { class: 'card notice' },
           el('div', { class: 'title' }, 'Выдано'),

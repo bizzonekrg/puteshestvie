@@ -34,15 +34,27 @@ function walletForm(s) {
     onSave: (v) => { for (const [k] of COINS) coinSet(s, k, v[k]); changed(); },
   });
 }
-// Выпадающий список вида монет (для ведущего)
-function coinSelect(id) {
-  const sel = el('select', { id });
-  for (const [k, short, full] of COINS) {
-    const o = el('option', { value: k }, `${full} (${short})`);
-    if (k === 'gp') o.selected = true;
-    sel.append(o);
-  }
-  return sel;
+// Пять полей для монет сразу (для ведущего): можно заполнить один вид или несколько
+function coinInputs(prefix) {
+  const inputs = {};
+  const node = el('div', { class: 'grid2' }, COINS.map(([k, short, full]) => {
+    const input = el('input', { id: prefix + k, type: 'text', inputmode: 'numeric', placeholder: '0', autocomplete: 'off' });
+    inputs[k] = input;
+    return el('div', { class: 'field' }, el('label', { for: prefix + k }, `${full}, ${short}`), input);
+  }));
+  return {
+    node,
+    // { gp: 5, sp: 3 } — только виды, где вписано больше нуля
+    read() {
+      const out = {};
+      for (const [k] of COINS) { const n = Math.max(0, toInt(inputs[k].value, 0)); if (n > 0) out[k] = n; }
+      return out;
+    },
+  };
+}
+function coinsText(obj) {
+  const parts = COINS.filter(([k]) => toInt(obj && obj[k], 0) > 0).map(([k, short]) => `${toInt(obj[k], 0)} ${short}`);
+  return parts.join(' · ');
 }
 
 // ---------- разбор файла LSS ----------
