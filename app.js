@@ -19,7 +19,7 @@ function el(tag, props, ...children) {
     else if (key === 'hidden') node.hidden = true;
     else node.setAttribute(key, value === true ? '' : value);
   }
-  for (const child of children.flat()) {
+  for (const child of children.flat(Infinity)) {
     if (child === null || child === undefined || child === false) continue;
     node.append(child instanceof Node ? child : document.createTextNode(String(child)));
   }
@@ -28,7 +28,7 @@ function el(tag, props, ...children) {
 
 function show(centered, ...children) {
   app.className = centered ? 'screen centered' : 'screen';
-  app.replaceChildren(...children.flat().filter(Boolean));
+  app.replaceChildren(...children.flat(Infinity).filter(Boolean));
   window.scrollTo(0, 0);
 }
 
@@ -199,6 +199,30 @@ async function showHome(profile) {
     const { count, error } = await sb.from('profiles').select('id', { count: 'exact', head: true }).eq('status', 'pending');
     pending = error ? null : (count || 0);
   }
+  // персонажи игрока
+  let charBlock;
+  if (profile.role === 'master') {
+    charBlock = el('div', { class: 'card' },
+      el('div', { class: 'title' }, 'Группы'),
+      el('p', { class: 'muted' }, 'Вход в группу как ведущий появится на следующем шаге сборки сайта.'));
+  } else {
+    const { data: chars, error: chErr } = await sb.from('characters')
+      .select('id, name, class_name, level')
+      .eq('owner_id', profile.id)
+      .order('created_at', { ascending: true });
+    charBlock = [
+      el('h2', {}, 'Мои персонажи'),
+      chErr ? el('p', { class: 'error' }, 'Не удалось загрузить персонажей.') : null,
+      (chars || []).map((ch) => el('button', { class: 'card rowcard asbutton', type: 'button', onclick: () => openCharacter(profile, ch.id, 'main') },
+        el('div', { class: 'grow' },
+          el('div', { class: 'title' }, ch.name),
+          el('p', { class: 'muted' }, `${ch.class_name || 'Персонаж'} · ${ch.level} ур.`)),
+        el('span', { class: 'gold' }, 'Открыть'))),
+      (!chErr && (!chars || !chars.length)) ? el('p', { class: 'muted' }, 'Персонажей пока нет. Загрузите первого.') : null,
+      el('button', { class: 'btn', type: 'button', onclick: () => showUpload(profile) }, 'Загрузить персонажа'),
+    ];
+  }
+
   show(false,
     el('div', { class: 'head' },
       el('h1', { class: 'small' }, `Здравствуйте, ${profile.name}!`),
@@ -207,9 +231,7 @@ async function showHome(profile) {
       el('div', { class: 'title' }, 'Вы — админ сайта'),
       el('p', { class: 'muted' }, pending === null ? 'Не удалось проверить заявки.' : (pending > 0 ? `Новых заявок на вход: ${pending}` : 'Новых заявок на вход нет.')),
       el('button', { class: 'btn', type: 'button', onclick: () => showAdmin(profile) }, 'Заявки на вход')) : null,
-    el('div', { class: 'card' },
-      el('div', { class: 'title' }, 'Персонажи'),
-      el('p', { class: 'muted' }, 'Загрузка персонажа и его лист появятся на следующем шаге сборки сайта.')),
+    charBlock,
     el('button', { class: 'btn outline spacer', type: 'button', onclick: () => showChangePassword(profile) }, 'Сменить пароль'),
     el('button', { class: 'btn outline', type: 'button', onclick: logout }, 'Выйти'));
 }

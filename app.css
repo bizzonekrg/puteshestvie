@@ -140,3 +140,111 @@ button:disabled { opacity: 0.6; cursor: default; }
 .error[hidden] { display: none; }
 
 .spacer { margin-top: auto; }
+
+/* ---------- лист персонажа ---------- */
+h2 { margin: 6px 0 0; font-family: Philosopher, Georgia, serif; font-size: 20px; line-height: 1.2; }
+.small { font-size: 13px; }
+.gold { color: var(--gold); font-weight: 600; font-size: 14px; }
+.grow { flex: 1 1 auto; min-width: 0; }
+.caps { letter-spacing: 0.08em; text-transform: uppercase; }
+
+.screen.withtabs { padding-bottom: 0; gap: 14px; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.badge { font-size: 13px; color: var(--muted); }
+.badge.bad { color: var(--danger); }
+
+.chead { display: flex; align-items: center; gap: 12px; }
+.portrait { flex: 0 0 auto; width: 72px; height: 72px; border-radius: 16px; object-fit: cover; background: var(--card); }
+.chip { flex: 0 0 auto; padding: 6px 12px; border-radius: 999px; background: var(--gold); color: var(--gold-ink); font-size: 13px; font-weight: 700; }
+
+.mini {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--gold);
+  font-size: 14px;
+  font-weight: 600;
+}
+.mini.solid { background: #262A34; color: var(--text); }
+.mini.wide { width: 100%; }
+
+.card.tight { gap: 4px; padding: 12px 16px; }
+.cardhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rowcard { flex-direction: row; align-items: center; gap: 10px; padding: 12px 16px; }
+.rowcard.slim { padding: 6px 8px 6px 16px; border-radius: 12px; }
+.asbutton { width: 100%; border: none; color: var(--text); text-align: left; font: inherit; }
+
+.hprow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.round { width: 56px; height: 56px; border-radius: 14px; border: 1px solid var(--line); background: #262A34; color: var(--text); font-size: 28px; line-height: 1; }
+.hpval { display: flex; align-items: baseline; gap: 4px; }
+.big { font-family: Philosopher, Georgia, serif; font-size: 52px; line-height: 1; }
+.hpval .muted { font-size: 20px; }
+
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.tile { display: flex; flex-direction: column; gap: 2px; padding: 12px 8px; border-radius: 14px; background: var(--card); text-align: center; }
+.tile .label { font-size: 12px; }
+.tval { font-size: 22px; font-weight: 700; }
+.big2 { font-size: 24px; }
+
+.lrow { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; padding: 4px 0; }
+.kv { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
+.kv strong { text-align: right; }
+
+.btn.dashed { min-height: 48px; background: transparent; color: var(--text); border: 1px dashed #5A6070; font-size: 15px; font-weight: 600; }
+.btn.danger { color: var(--danger); border-color: var(--danger); }
+label.btn { cursor: pointer; }
+.filehide { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.filehide:focus-visible + label { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.tabs {
+  position: sticky;
+  bottom: 0;
+  margin: auto -20px 0;
+  padding: 8px 14px calc(8px + env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+}
+.tabs button { min-height: 48px; border-radius: 12px; border: none; background: transparent; color: var(--text); font-size: 13px; font-weight: 600; }
+.tabs button[aria-current="page"] { background: var(--gold); color: var(--gold-ink); font-weight: 700; }
+
+textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  resize: vertical;
+}
+
+.modal-back {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+}
+.modal {
+  width: 100%;
+  max-width: 460px;
+  max-height: 92vh;
+  max-height: 92dvh;
+  overflow-y: auto;
+  padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+  border-radius: 20px 20px 0 0;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+}
+.modal .title { font-family: Philosopher, Georgia, serif; font-size: 22px; }
+.modal input[type="text"] { background: var(--card); }
