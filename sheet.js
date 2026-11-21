@@ -823,13 +823,15 @@ function tabMagic(s, ro, editBtn) {
     },
     onDelete: isNew ? null : () => { s.features.splice(s.features.indexOf(f), 1); changed(); },
   });
-  // Коллегия барда: выбор на 3 уровне, умения добавляются в лист сами
-  const isBard = /бард/i.test(s.cls || '');
-  const college = COLLEGES.find((x) => x.key === s.college) || null;
+  // Класс: умения по уровням и подкласс (коллегия барда, покровитель колдуна)
+  const cd = classData(s.cls);
+  const college = cd ? (cd.subs.find((x) => x.key === s.college) || null) : null;
+  const hasFeature = (n) => s.features.some((f) => hintKey(f.name) === hintKey(n));
+  const hasSpell = (n, en) => s.spells.some((x) => hintKey(x.name) === hintKey(n) || (en && x.en && hintKey(x.en) === hintKey(en)));
   const collegeMissing = (col) => {
     const done = new Set((s.collegeAdded || []).map(hintKey));
-    const ft = col.features.filter(([lv, n]) => lv <= s.level && !done.has(hintKey(n)) && !s.features.some((f) => hintKey(f.name) === hintKey(n)));
-    const spl = col.spells.filter(([lv, n]) => lv <= s.level && !done.has(hintKey(n)) && !s.spells.some((x) => hintKey(x.name) === hintKey(n)));
+    const ft = col.features.filter(([lv, n]) => lv <= s.level && !done.has(hintKey(n)) && !hasFeature(n));
+    const spl = col.spells.filter(([lv, n, , en]) => lv <= s.level && !done.has(hintKey(n)) && !hasSpell(n, en));
     return { ft, spl };
   };
   const collegeApply = (col) => {
@@ -841,34 +843,53 @@ function tabMagic(s, ro, editBtn) {
     changed();
   };
   let collegeCard = null;
-  if (isBard && !ro && s.level >= 3 && !college) {
+  if (cd && !ro && s.level >= cd.subLevel && !college) {
     collegeCard = el('div', { class: 'card notice' },
-      el('div', { class: 'title' }, 'Выберите коллегию'),
-      el('p', { class: 'muted' }, 'На 3 уровне бард выбирает коллегию. Посоветуйтесь с ведущим. Умения коллегии с подсказками добавятся в лист сами.'),
-      COLLEGES.map((col) => el('button', { class: 'pick', type: 'button', onclick: () => {
+      el('div', { class: 'title' }, cd.subTitle),
+      el('p', { class: 'muted' }, cd.subText),
+      cd.subs.map((col) => el('button', { class: 'pick', type: 'button', onclick: () => {
         if (window.confirm(col.name + ' — выбрать?')) collegeApply(col);
       } }, el('div', { class: 'title' }, col.name), el('div', { class: 'muted' }, col.about))));
-  } else if (isBard && !ro && college) {
+  } else if (cd && !ro && college) {
     const m = collegeMissing(college);
     const names = m.ft.concat(m.spl).map((x) => x[1]);
     collegeCard = names.length
       ? el('div', { class: 'card notice' },
-        el('div', { class: 'title' }, 'Новое от коллегии'),
+        el('div', { class: 'title' }, cd.subNew),
         el('p', { class: 'muted' }, college.name + ': ' + names.join(', ') + '.'),
         el('button', { class: 'mini solid wide', type: 'button', onclick: () => collegeApply(college) }, 'Добавить в лист'))
       : null;
   }
-  const collegeChange = isBard && !ro && college ? el('button', { class: 'btn link', type: 'button', onclick: () => {
-    if (!window.confirm(college.name + ': убрать её умения из листа и выбрать коллегию заново?')) return;
+  const collegeChange = cd && !ro && college ? el('button', { class: 'btn link', type: 'button', onclick: () => {
+    if (!window.confirm(college.name + ': убрать добавленные умения и заклинания из листа и выбрать заново?')) return;
     const added = new Set((s.collegeAdded || []).map(hintKey));
     s.features = s.features.filter((f) => !added.has(hintKey(f.name)));
     s.spells = s.spells.filter((x) => !added.has(hintKey(x.name)));
     s.college = ''; s.collegeAdded = [];
     changed();
-  } }, 'Сменить коллегию (' + college.name + ')') : null;
+  } }, 'Сменить ' + cd.subWhat + ' (' + college.name + ')') : null;
+
+  // Умения самого класса, положенные по уровню, которых ещё нет в листе
+  let classCard = null;
+  if (cd && !ro) {
+    const seen = new Set((s.classSeen || []).map(hintKey));
+    const miss = cd.features.filter(([lv, n]) => lv <= s.level && !seen.has(hintKey(n)) && !hasFeature(n));
+    const mark = () => { s.classSeen = (s.classSeen || []).concat(miss.map((x) => x[1])); };
+    if (miss.length) classCard = el('div', { class: 'card notice' },
+      el('div', { class: 'title' }, 'Положено по уровню'),
+      el('p', { class: 'muted' }, 'Этих умений класса нет в листе: ' + miss.map(([lv, n]) => `${n} (${lv} ур.)`).join(', ') + '.'),
+      el('div', { class: 'btnrow' },
+        el('button', { class: 'mini solid', type: 'button', onclick: () => {
+          for (const [, n] of miss) s.features.push({ name: n, text: '', usesMax: 0, usesLeft: 0 });
+          mark(); changed();
+        } }, 'Добавить'),
+        el('button', { class: 'mini', type: 'button', onclick: () => { mark(); changed(); } }, 'Не нужно')));
+  }
+  const ruleLine = cd ? el('p', { class: 'muted small' }, `По правилам на ${s.level} уровне: ${cd.rule(s.level)}.`) : null;
 
   const features = [
     el('h2', {}, 'Умения'),
+    classCard,
     collegeCard,
     s.features.length ? null : el('p', { class: 'muted' }, 'Умений пока нет.'),
     s.features.map((f, i) => {
@@ -910,7 +931,7 @@ function tabMagic(s, ro, editBtn) {
         changed();
       } }, 'Долгий отдых')));
 
-  return [head, slots.length ? slots : el('p', { class: 'muted' }, 'Ячеек заклинаний нет.'), spellBlocks, features, rests,
+  return [head, ruleLine, slots.length ? slots : el('p', { class: 'muted' }, 'Ячеек заклинаний нет.'), spellBlocks, features, rests,
     el('p', { class: 'muted small' }, 'Подсказки краткие и написаны по правилам 2024 года. Точный текст заклинания смотрите в книге правил.')];
 }
 
