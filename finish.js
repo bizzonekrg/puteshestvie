@@ -9,19 +9,35 @@ function showFinish(profile, gid, d) {
     const input = (id, placeholder, numeric) => el('input', { id: id + i, type: 'text', inputmode: numeric ? 'numeric' : null, placeholder, autocomplete: 'off' });
     const xp = input('fxp', '+0', true);
     const gold = input('fgp', '+0', true);
-    const item = input('fit', 'Название предмета', false);
     const level = el('input', { id: 'flv' + i, type: 'checkbox', class: 'check' });
-    return {
-      m, xp, gold, item, level,
+    // предмет выбирается из списка или создаётся свой — во всплывающем окне
+    const row = { gift: null };
+    const giftText = el('p', { class: 'muted' }, 'Предмет не выбран.');
+    const giftBtn = el('button', { class: 'btn outline', type: 'button' }, 'Выбрать предмет');
+    const giftDrop = el('button', { class: 'btn link', type: 'button', hidden: true }, 'Убрать предмет');
+    giftBtn.addEventListener('click', () => openGiftModal((r) => {
+      row.gift = r.gift;
+      giftText.textContent = `Предмет: ${r.label}${r.gift.dmg ? ' · ' + r.gift.dmg : ''}${r.gift.qty > 1 ? ' · ' + r.gift.qty + ' шт.' : ''}`;
+      giftBtn.textContent = 'Выбрать другой предмет';
+      giftDrop.hidden = false;
+    }));
+    giftDrop.addEventListener('click', () => {
+      row.gift = null;
+      giftText.textContent = 'Предмет не выбран.';
+      giftBtn.textContent = 'Выбрать предмет';
+      giftDrop.hidden = true;
+    });
+    return Object.assign(row, {
+      m, xp, gold, level,
       node: el('div', { class: 'card' },
         el('div', { class: 'title' }, m.character),
         el('p', { class: 'muted' }, `${m.class_name || 'Персонаж'} · ${m.level} ур. · игрок: ${m.name}`),
         el('div', { class: 'grid2' },
           el('div', { class: 'field' }, el('label', { for: 'fxp' + i }, 'Опыт'), xp),
           el('div', { class: 'field' }, el('label', { for: 'fgp' + i }, 'Золото, зм'), gold)),
-        el('div', { class: 'field' }, el('label', { for: 'fit' + i }, 'Предмет (не обязательно)'), item),
+        giftText, giftBtn, giftDrop,
         el('label', { class: 'checkrow', for: 'flv' + i }, level, 'Повысить уровень')),
-    };
+    });
   });
 
   const submit = el('button', { class: 'btn', type: 'button' }, 'Завершить игру и выдать награды');
@@ -32,7 +48,7 @@ function showFinish(profile, gid, d) {
       character_id: r.m.character_id,
       xp: Math.max(0, toInt(r.xp.value, 0)),
       gold: Math.max(0, toInt(r.gold.value, 0)),
-      item: r.item.value.trim(),
+      gift: r.gift,
       level_up: r.level.checked,
     }));
     await busy(submit, 'Завершаем…', async () => {
@@ -84,8 +100,8 @@ function showReward(profile, r, moreCount) {
       line('Уровень', r.level_up ? `повышение до ${Math.min(20, (r.level || 1) + 1)}` : 'без изменений'),
       empty ? el('p', { class: 'muted' }, 'В этот раз ведущий ничего не выдал.') : null),
     el('p', { class: 'muted' }, r.level_up
-      ? 'Опыт, золото, предмет и новый уровень запишутся в лист сами. Новые хиты, заклинания и умения за уровень добавьте в листе сами.'
-      : 'Опыт, золото и предмет запишутся в лист сами.'),
+      ? 'Опыт, золото и новый уровень запишутся в лист сами, предмет появится в листе, когда вы его откроете. Новые хиты, заклинания и умения за уровень добавьте сами.'
+      : 'Опыт и золото запишутся в лист сами, предмет появится в листе, когда вы его откроете.'),
     moreCount > 0 ? el('p', { class: 'muted' }, `Ещё наград ждёт: ${moreCount}`) : null,
     err.node,
     accept,

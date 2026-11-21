@@ -349,8 +349,17 @@ async function openCharacter(profile, id, tab, back) {
   s.weapons = s.weapons || []; s.items = s.items || []; s.spells = s.spells || []; s.features = s.features || [];
   s.skills = s.skills || []; s.saves = s.saves || {}; s.spell = s.spell || { dc: 10, atk: 0, slots: [] };
   s.spell.slots = s.spell.slots || [];
-  CH = { profile, id: data.id, own: data.owner_id === profile.id, sheet: s, tab: tab || 'main', open: new Set(), saveState: 'saved', timer: null, badge: null, back: back || null, group: undefined };
+  CH = { profile, id: data.id, own: data.owner_id === profile.id, sheet: s, tab: tab || 'main', open: new Set(), saveState: 'saved', timer: null, badge: null, back: back || null, group: undefined, notices: [], checking: false };
+  const opened = CH;
   renderChar();
+  if (opened.own) {
+    checkGifts(opened);
+    // раз в 15 секунд смотрим, не выдал ли что-нибудь ведущий
+    const timer = setInterval(() => {
+      if (CH !== opened) return clearInterval(timer);
+      if (document.visibilityState === 'visible') checkGifts(opened);
+    }, 15000);
+  }
 }
 
 function badgeText(state) {
@@ -419,10 +428,16 @@ function renderChar() {
   else body = tabGroup(c, ro);
 
   const tab = (key, label) => el('button', { type: 'button', 'aria-current': c.tab === key ? 'page' : null, onclick: () => { c.tab = key; renderChar(); window.scrollTo(0, 0); } }, label);
+  const notices = c.notices.map((n) => el('div', { class: 'card notice' },
+    el('div', { class: 'title' }, 'Ведущий выдал'),
+    el('p', {}, n.title),
+    n.sub ? el('p', { class: 'muted small' }, n.sub) : null,
+    el('button', { class: 'mini wide', type: 'button', onclick: () => { c.notices.splice(c.notices.indexOf(n), 1); renderChar(); } }, 'Понятно')));
+
   const nav = el('nav', { class: 'tabs', 'aria-label': 'Разделы' }, tab('main', 'Персонаж'), tab('items', 'Вещи'), tab('magic', 'Магия'), tab('group', 'Группа'));
 
   app.className = 'screen withtabs';
-  app.replaceChildren(top, header, ...body.flat(Infinity).filter(Boolean), nav);
+  app.replaceChildren(top, header, ...notices, ...body.flat(Infinity).filter(Boolean), nav);
   window.scrollTo(0, y);
 }
 
@@ -490,7 +505,8 @@ function tabMain(s, ro, editBtn) {
   const weapons = [
     el('h2', {}, 'Оружие'),
     s.weapons.map((w) => el('div', { class: 'card rowcard' },
-      el('div', { class: 'grow' }, el('div', { class: 'title' }, w.name), el('p', { class: 'muted' }, `Атака ${signed(w.bonus)}${w.dmg ? ' · урон ' + w.dmg : ''}`)),
+      el('div', { class: 'grow' }, el('div', { class: 'title' }, w.name), el('p', { class: 'muted' }, `Атака ${signed(w.bonus)}${w.dmg ? ' · урон ' + w.dmg : ''}`),
+        w.note ? el('p', { class: 'muted small' }, w.note) : null),
       editBtn('Изменить', () => weaponForm(w, false)))),
     ro ? null : el('button', { class: 'btn dashed', type: 'button', onclick: () => weaponForm({ name: '', bonus: 0, dmg: '' }, true) }, '+ Добавить оружие'),
   ];
@@ -558,7 +574,7 @@ function tabItems(s, ro, editBtn) {
     el('h2', {}, 'Снаряжение'),
     s.items.length ? null : el('p', { class: 'muted' }, 'Предметов пока нет.'),
     s.items.map((it) => el('div', { class: 'card rowcard slim' },
-      el('div', { class: 'grow' }, it.name),
+      el('div', { class: 'grow' }, it.name, it.note ? el('p', { class: 'muted small' }, it.note) : null),
       el('span', { class: 'muted nowrap' }, `${it.qty} шт.`),
       editBtn('Изм.', () => itemForm(it, false)))),
     ro ? null : el('button', { class: 'btn dashed', type: 'button', onclick: () => itemForm({ name: '', qty: 1 }, true) }, '+ Добавить предмет'),
@@ -709,4 +725,54 @@ function tabGroup(c, ro) {
     el('div', { class: 'title' }, 'Группа'),
     el('p', { class: 'muted' }, 'Этот персонаж пока не в группе.'),
     el('button', { class: 'btn', type: 'button', onclick: () => go(() => showGroups(c.profile)) }, 'Вступить или создать группу'))];
+}
+
+// ---------- выданное ведущим ----------
+
+function addItem(s, name, qty, note) {
+  const same = s.items.find((x) => x.name.toLowerCase() === String(name).toLowerCase());
+  if (same) { same.qty = (toInt(same.qty, 1)) + qty; if (note && !same.note) same.note = note; }
+  else s.items.push(note ? { name, qty, note } : { name, qty });
+}
+
+// Записать один подарок в лист и вернуть текст сообщения для игрока
+function applyGift(s, g) {
+  if (g.kind === 'gold') {
+    s.gold = (toInt(s.gold, 0)) + toInt(g.gold, 0);
+    return { title: `Золото: +${g.gold} зм`, sub: '' };
+  }
+  const qty = Math.max(1, toInt(g.qty, 1));
+  const count = qty > 1 ? `, ${qty} шт.` : '';
+  if (g.kind === 'weapon') {
+    const ab = g.ability === 'dex' ? 'dex' : g.ability === 'str' ? 'str' : (modOf(s.stats.dex) > modOf(s.stats.str) ? 'dex' : 'str');
+    const bonus = modOf(s.stats[ab]) + (toInt(s.prof, 0));
+    s.weapons.push({ name: g.name, bonus, dmg: g.dmg || '', note: [g.props, g.descr].filter(Boolean).join('. ') });
+    addItem(s, g.name, qty, '');
+    return { title: `${g.name}${count} — добавлено в «Оружие» и «Вещи»`, sub: `Атака ${signed(bonus)}${g.dmg ? ' · урон ' + g.dmg : ''}. Бонус атаки сайт посчитал сам, поправьте, если нужно.` };
+  }
+  addItem(s, g.name, qty, g.descr || '');
+  return { title: `${g.name}${count} — добавлено в «Вещи»`, sub: g.descr || '' };
+}
+
+// Забрать у сервера выданное, записать в лист, сохранить и только потом отметить как полученное
+async function checkGifts(c) {
+  if (!c || CH !== c || !c.own || c.checking) return;
+  c.checking = true;
+  try {
+    const { data, error } = await sb.rpc('my_gifts', { p_character: c.id });
+    if (error || !data || !data.length || CH !== c) return;
+    const s = c.sheet;
+    s.giftsApplied = Array.isArray(s.giftsApplied) ? s.giftsApplied : [];
+    const fresh = data.filter((g) => !s.giftsApplied.includes(g.id));
+    for (const g of fresh) {
+      c.notices.push(applyGift(s, g));
+      s.giftsApplied.push(g.id);
+    }
+    if (s.giftsApplied.length > 200) s.giftsApplied = s.giftsApplied.slice(-200);
+    if (fresh.length) changed();
+    if (c.timer) await saveNow();
+    if (c.saveState === 'saved') await sb.rpc('ack_gifts', { p_ids: data.map((g) => g.id) });
+  } finally {
+    c.checking = false;
+  }
 }
