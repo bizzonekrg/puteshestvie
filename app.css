@@ -323,3 +323,5 @@ select {
 
 .grid2 > .card.tight { text-align: center; }
 .grid2 > .card.tight > .tval, .grid2 > .card.tight > .coincol { margin-top: auto; margin-bottom: auto; align-items: center; }
+
+.rowcard.slim .grow, .slimcard .cardhead .grow { font-size: 15px; }
