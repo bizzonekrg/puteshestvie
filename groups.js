@@ -218,6 +218,10 @@ async function showGroup(profile, gid) {
       el('h2', {}, `Игроки: ${(d.members || []).length}`),
       memberCards,
     ],
+    (d.is_master && d.master_confirmed) ? el('div', { class: 'card notice' },
+      el('div', { class: 'title' }, 'Конец игры'),
+      el('p', { class: 'muted' }, 'Когда игра закончится, выдайте награды. После этого группа распустится.'),
+      el('button', { class: 'btn', type: 'button', onclick: () => showFinish(profile, gid, d) }, 'Завершить игру')) : null,
     manage,
     leave);
 }

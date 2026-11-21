@@ -273,3 +273,10 @@ textarea {
 .prewrap { white-space: pre-wrap; overflow-wrap: anywhere; }
 
 .codebig { font-size: 24px; letter-spacing: 0.08em; overflow-wrap: anywhere; }
+
+/* ---------- конец игры ---------- */
+.checkrow { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 15px; color: var(--text); cursor: pointer; }
+.check { width: 22px; height: 22px; accent-color: var(--gold); flex: 0 0 auto; }
+.scores { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.scores button { height: 56px; border-radius: 12px; border: 2px solid var(--line); background: var(--bg); color: var(--text); font-size: 20px; font-weight: 700; }
+.scores button[aria-pressed="true"] { border-color: var(--gold); background: var(--gold); color: var(--gold-ink); }

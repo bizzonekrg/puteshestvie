@@ -223,7 +223,7 @@ async function showHome(profile) {
   // персонажи игрока
   let charBlock;
   if (profile.role === 'master') {
-    charBlock = await masterGroupsBlock(profile);
+    charBlock = [await masterStatsBlock(), await masterGroupsBlock(profile)];
   } else {
     const { data: chars, error: chErr } = await sb.from('characters')
       .select('id, name, class_name, level')
@@ -380,6 +380,16 @@ async function route() {
   }
   if (!profile) { await sb.auth.signOut(); return showLogin(); }
   if (profile.status !== 'approved') return showWaiting(profile);
+  // после игры: сначала награда, потом обязательная оценка ведущего — до этого остальное закрыто
+  const { data: pend, error: pendErr } = await sb.rpc('pending_state');
+  if (pendErr) {
+    return show(true,
+      el('p', { class: 'error' }, 'Не удалось загрузить данные. Проверьте интернет.'),
+      el('button', { class: 'btn', type: 'button', onclick: () => route() }, 'Попробовать ещё раз'),
+      el('button', { class: 'btn outline', type: 'button', onclick: logout }, 'Выйти'));
+  }
+  if (pend && pend.rewards && pend.rewards.length) return showReward(profile, pend.rewards[0], pend.rewards.length - 1);
+  if (pend && pend.ratings && pend.ratings.length) return showRate(profile, pend.ratings[0]);
   // пришли по ссылке-приглашению: игрока сразу ведём на вступление с подставленным кодом
   if (pendingCode && profile.role === 'player') return showGroups(profile, takeJoinCode());
   return showHome(profile);
