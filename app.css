@@ -145,7 +145,7 @@ button:disabled { opacity: 0.6; cursor: default; }
 h2 { margin: 6px 0 0; font-family: Philosopher, Georgia, serif; font-size: 20px; line-height: 1.2; }
 .small { font-size: 13px; }
 .gold { color: var(--gold); font-weight: 600; font-size: 14px; }
-.grow { flex: 1 1 auto; min-width: 0; }
+.grow { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; hyphens: auto; -webkit-hyphens: auto; }
 .caps { letter-spacing: 0.08em; text-transform: uppercase; }
 
 .screen.withtabs { padding-bottom: 0; gap: 14px; }
@@ -294,6 +294,8 @@ textarea {
 
 /* ---------- подсказки ---------- */
 .slimcard { gap: 8px; padding: 6px 8px 6px 16px; border-radius: 12px; }
+.slimcard .cardhead { gap: 8px; }
+.slimcard .cardhead .mini { padding: 0 10px; }
 .hint { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; margin-right: 8px; margin-bottom: 6px; border-radius: 10px; border: 1px solid var(--gold); background: var(--bg); }
 .hint p { margin: 0; line-height: 1.45; color: #C9CCD4; }
 .hint strong { color: var(--text); }
