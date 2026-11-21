@@ -243,6 +243,10 @@ async function showHome(profile) {
     ];
   }
 
+  const guildBlock = await guildHomeBlock(profile);
+  let newGuilds = 0;
+  if (profile.is_admin) { const { data: gl } = await sb.rpc('guild_admin_list'); newGuilds = (gl || []).length; }
+
   show(false,
     el('div', { class: 'head' },
       el('h1', { class: 'small' }, `Здравствуйте, ${profile.name}!`),
@@ -250,8 +254,10 @@ async function showHome(profile) {
     profile.is_admin ? el('div', { class: 'card notice' },
       el('div', { class: 'title' }, 'Вы — админ сайта'),
       el('p', { class: 'muted' }, pending === null ? 'Не удалось проверить заявки.' : (pending > 0 ? `Новых заявок на вход: ${pending}` : 'Новых заявок на вход нет.')),
-      el('button', { class: 'btn', type: 'button', onclick: () => showAdmin(profile) }, 'Заявки на вход')) : null,
+      newGuilds ? el('p', { class: 'muted' }, `Новых гильдий на подтверждение: ${newGuilds}`) : null,
+      el('button', { class: 'btn', type: 'button', onclick: () => showAdmin(profile) }, 'Заявки')) : null,
     charBlock,
+    guildBlock,
     el('button', { class: 'btn outline spacer', type: 'button', onclick: () => showChangePassword(profile) }, 'Сменить пароль'),
     el('button', { class: 'btn outline', type: 'button', onclick: logout }, 'Выйти'));
 }
@@ -345,11 +351,15 @@ async function showAdmin(profile) {
       reset, result);
   });
 
+  const guildCard = await guildAdminBlock(profile, () => showAdmin(profile));
+
   show(false,
     el('div', { class: 'head' },
-      el('h1', { class: 'small' }, 'Заявки на вход'),
+      el('h1', { class: 'small' }, 'Заявки'),
       el('p', { class: 'muted' }, 'Этот экран видит только админ сайта.')),
     err.node,
+    guildCard,
+    el('h2', {}, 'Заявки на вход'),
     cards.length ? cards : (error ? null : el('div', { class: 'card' }, el('p', { class: 'muted' }, 'Новых заявок нет.'))),
     el('h1', { class: 'small', style: 'margin-top:10px' }, 'Участники'),
     mErr ? el('p', { class: 'error' }, 'Не удалось загрузить участников.') : memberCards,
