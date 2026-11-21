@@ -332,3 +332,5 @@ select {
 .chipbtn { flex: 0 0 auto; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--text); font: inherit; font-size: 14px; }
 .chipbtn[aria-pressed="true"] { background: var(--gold); color: var(--gold-ink); border-color: var(--gold); }
 .pick:disabled { opacity: .5; }
+
+.warn { color: var(--gold); margin: 0; }

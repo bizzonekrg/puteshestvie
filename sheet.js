@@ -589,7 +589,22 @@ function tabMain(s, ro, editBtn) {
       ro ? el('span', {}) : el('button', { class: 'round', type: 'button', 'aria-label': 'Уменьшить хиты', onclick: () => step(-1) }, '−'),
       el('div', { class: 'hpval' }, el('span', { class: 'big' }, String(hp.cur)), el('span', { class: 'muted' }, ` / ${hp.max}`)),
       ro ? el('span', {}) : el('button', { class: 'round', type: 'button', 'aria-label': 'Увеличить хиты', onclick: () => step(1) }, '+')),
-    hp.temp > 0 ? el('p', { class: 'muted center' }, `Временные хиты: ${hp.temp}`) : null);
+    hp.temp > 0 ? el('p', { class: 'muted center' }, `Временные хиты: ${hp.temp}`) : null,
+    (() => {
+      // Подсказка: сколько хитов положено классу на этом уровне
+      const cls = s.cls || '';
+      const die = /варвар/i.test(cls) ? 12 : /воин|боец|паладин|следопыт|рейнджер/i.test(cls) ? 10 : /чародей|волшебник/i.test(cls) ? 6
+        : /бард|жрец|клирик|друид|монах|плут|разбойник|колдун/i.test(cls) ? 8 : toInt(String(s.hitDie || '').replace(/\D/g, ''), 0);
+      if (ro || !die) return null;
+      const con = modOf(s.stats.con), n = Math.min(20, Math.max(1, toInt(s.level, 1)));
+      const at = (per) => Math.max(1, die + con) + (n - 1) * Math.max(1, per + con);
+      const avg = at(die / 2 + 1), lo = at(1), hi = at(die);
+      const text = n === 1 ? `По правилам на 1 уровне: ${avg} (кость к${die}, Телосложение ${signed(con)}).`
+        : `По правилам на ${n} уровне: ${avg}, если брать среднее (+${die / 2 + 1} за уровень); от ${lo} до ${hi}, если бросать к${die}. Телосложение ${signed(con)}.`;
+      return [el('p', { class: 'muted small' }, text),
+        hp.max < lo || (n === 1 && hp.max !== avg) ? el('p', { class: 'small warn' }, `Сейчас максимум ${hp.max} — это меньше, чем может быть на этом уровне. Проверьте.`) : null,
+        hp.max !== avg ? el('button', { class: 'mini wide', type: 'button', onclick: () => { const d = avg - hp.max; hp.max = avg; hp.cur = clamp(hp.cur + Math.max(0, d), 0, avg); changed(); } }, `Поставить среднее: ${avg}`) : null];
+    })());
 
   const tile = (label, value) => el('div', { class: 'tile' }, el('div', { class: 'label' }, label), el('div', { class: 'tval' }, value));
   const row3 = el('div', { class: 'grid3' }, tile('КД', String(s.ac)), tile('Инициатива', signed(modOf(s.stats.dex))), tile('Скорость', `${s.speed} фт`));
