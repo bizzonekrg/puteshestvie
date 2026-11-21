@@ -271,3 +271,5 @@ textarea {
 .card .label { font-size: 13px; font-weight: 600; color: var(--muted); }
 
 .prewrap { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.codebig { font-size: 24px; letter-spacing: 0.08em; overflow-wrap: anywhere; }
