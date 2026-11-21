@@ -2,18 +2,19 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#15171D">
 <title>Отправиться в путешествие?</title>
-<style>
-  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #15171D; color: #EDEAE2; font-family: system-ui, sans-serif; text-align: center; padding: 24px; box-sizing: border-box; }
-  h1 { font-size: 30px; margin: 0 0 12px; }
-  p { color: #A9ADB8; margin: 0; font-size: 16px; }
-</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Philosopher:wght@700&display=swap">
+<link rel="stylesheet" href="app.css?v=2">
 </head>
 <body>
-<main>
-  <h1>Отправиться в путешествие?</h1>
-  <p>Сайт в сборке. Скоро здесь появится вход.</p>
+<main id="app" class="screen">
+  <p class="muted center">Загрузка…</p>
 </main>
+<noscript><p style="color:#EDEAE2;padding:24px">Для работы сайта включите JavaScript в браузере.</p></noscript>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js?v=2"></script>
 </body>
 </html>
