@@ -314,4 +314,5 @@ select {
 }
 .tval.wallet { font-size: 16px; line-height: 1.35; overflow-wrap: anywhere; }
 
-.coinrest { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 14px; color: var(--muted); }
+.coincol { display: flex; flex-direction: column; gap: 2px; font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.grid2 > .card.tight > .mini.wide { margin-top: auto; }

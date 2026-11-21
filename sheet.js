@@ -604,11 +604,10 @@ function tabMain(s, ro, editBtn) {
     }) }, 'Изменить'));
   const wallet = el('div', { class: 'card tight' },
     el('div', { class: 'label' }, 'Монеты'),
-    el('div', { class: 'tval nowrap' }, coinGet(s, 'gp') + ' зм'),
-    (() => {
-      const rest = COINS.filter(([k]) => k !== 'gp').map(([k, short]) => [coinGet(s, k), short]).filter(([n]) => n > 0);
-      return rest.length ? el('div', { class: 'coinrest' }, rest.map(([n, short]) => el('span', { class: 'nowrap' }, `${n} ${short}`))) : null;
-    })(),
+    el('div', { class: 'coincol' }, (() => {
+      const have = COINS.map(([k, short]) => [coinGet(s, k), short]).filter(([n]) => n > 0);
+      return (have.length ? have : [[0, 'зм']]).map(([n, short]) => el('div', { class: 'nowrap' }, `${n} ${short}`));
+    })()),
     ro ? null : el('button', { class: 'mini wide', type: 'button', onclick: () => walletForm(s) }, 'Изменить'));
   const row2 = el('div', { class: 'grid2' }, numCard('Опыт', String(s.xp), 'Опыт', 'xp'), wallet);
 
