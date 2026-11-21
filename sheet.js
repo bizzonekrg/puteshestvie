@@ -821,7 +821,13 @@ function tabMagic(s, ro, editBtn) {
     for (const x of list) {
       const hp = hintParts('spell', x, 'sp:' + s.spells.indexOf(x));
       spellBlocks.push(el('div', { class: 'card slimcard' },
-        el('div', { class: 'cardhead' }, el('div', { class: 'grow' }, x.name), hp.btn, editBtn('Изм.', () => spellForm(x, false))),
+        el('div', { class: 'cardhead' }, el('div', { class: 'grow' }, x.name, (() => {
+          // Пометка, если заклинания нет в списке класса (и его не дал подкласс)
+          const code = spellListCode(s);
+          const h = SPELL_HINT_INDEX.get(hintKey(x.name)) || (x.en ? SPELL_HINT_INDEX.get(hintKey(x.en)) : null);
+          const given = (s.collegeAdded || []).some((n) => hintKey(n) === hintKey(x.name));
+          return code && h && h.classes && !h.classes.includes(code) && !given ? el('div', { class: 'small warn' }, 'не из списка класса') : null;
+        })()), hp.btn, editBtn('Изм.', () => spellForm(x, false))),
         hp.box));
     }
   }
@@ -1048,6 +1054,8 @@ function openSpellPicker(s) {
   const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
   const has = (h) => s.spells.some((x) => h.names.some((n) => hintKey(n) === hintKey(x.name)) || (x.en && hintKey(x.en) === hintKey(h.en)));
   let level = -1;
+  const code = spellListCode(s);
+  let onlyMine = !!code;
   let pending = null; // заклинание, которое не помещается в положенное число
   const lim = spellLimits(s);
   const add = (h, instead) => {
@@ -1059,13 +1067,19 @@ function openSpellPicker(s) {
     draw();
   };
   const counter = el('p', { class: 'muted small' });
+  const scope = el('div', { class: 'choice' });
   const search = el('input', { id: 'spq', type: 'text', placeholder: 'Например: огненный, лечение', autocomplete: 'off' });
   const results = el('div', { class: 'results' });
   const status = el('p', { class: 'muted small' }, 'Нажмите на заклинание, чтобы добавить его в лист.');
   const chips = el('div', { class: 'chips' });
   const draw = () => {
-    chips.replaceChildren(...[-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => el('button', { class: 'chipbtn', type: 'button', 'aria-pressed': String(level === n),
-      onclick: () => { level = n; draw(); } }, n < 0 ? 'Все' : n === 0 ? 'Заговоры' : String(n))));
+    const maxLv = lim ? lim.maxLv : 9;
+    chips.hidden = !!pending; search.hidden = !!pending; scope.hidden = !!pending || !code;
+    scope.replaceChildren(
+      el('button', { type: 'button', 'aria-pressed': String(onlyMine), onclick: () => { onlyMine = true; draw(); } }, 'Мой класс'),
+      el('button', { type: 'button', 'aria-pressed': String(!onlyMine), onclick: () => { onlyMine = false; draw(); } }, 'Все классы'));
+    chips.replaceChildren(...[-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9].filter((n) => n <= maxLv).map((n) => el('button', { class: 'chipbtn', type: 'button', 'aria-pressed': String(level === n),
+      onclick: () => { level = n; draw(); } }, n < 0 ? 'Все уровни' : n === 0 ? 'Заговоры' : n + ' ур.')));
     const ct = spellCountText(s);
     counter.textContent = ct ? 'По правилам: ' + ct + '.' : '';
     if (pending) {
@@ -1080,7 +1094,7 @@ function openSpellPicker(s) {
       return;
     }
     const q = hintKey(search.value);
-    const list = SPELL_HINTS.filter((h) => (level < 0 || h.level === level) && (!q || h.names.some((n) => hintKey(n).includes(q))));
+    const list = SPELL_HINTS.filter((h) => (level < 0 ? h.level <= maxLv : h.level === level) && (!onlyMine || (h.classes || '').includes(code)) && (!q || h.names.some((n) => hintKey(n).includes(q))));
     results.replaceChildren(...(list.length ? list.slice(0, 60).map((h) => {
       const mine = has(h);
       return el('button', { class: 'pick', type: 'button', disabled: mine, onclick: () => {
@@ -1090,7 +1104,8 @@ function openSpellPicker(s) {
         add(h);
       } },
         el('span', { class: 'title' }, cap(h.names[0]) + (mine ? ' — уже в листе' : '')),
-        el('span', { class: 'muted' }, (h.level === 0 ? 'Заговор' : h.level + ' ур.') + ' · ' + h.meta));
+        el('span', { class: 'muted' }, (h.level === 0 ? 'Заговор' : h.level + ' ур.') + ' · ' + h.meta),
+        el('span', { class: 'muted small' }, h.what));
     }) : [el('p', { class: 'muted' }, 'Ничего не нашлось. Попробуйте другое слово или впишите заклинание вручную.')]));
     if (list.length > 60) results.append(el('p', { class: 'muted small' }, `Показаны первые 60 из ${list.length}. Уточните поиск или выберите уровень.`));
   };
@@ -1101,7 +1116,7 @@ function openSpellPicker(s) {
   const box = el('div', { class: 'modal stack full fixed' },
     el('div', { class: 'cardhead' }, el('div', { class: 'title' }, 'Справочник заклинаний'),
       el('button', { class: 'mini solid', type: 'button', onclick: close }, 'Готово')),
-    search, chips, counter, results, status);
+    search, scope, chips, counter, results, status);
   back.addEventListener('click', (e) => { if (e.target === back) close(); });
   back.append(box);
   document.body.append(back);
