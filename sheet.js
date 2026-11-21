@@ -827,7 +827,7 @@ function tabMagic(s, ro, editBtn) {
           const h = SPELL_HINT_INDEX.get(hintKey(x.name)) || (x.en ? SPELL_HINT_INDEX.get(hintKey(x.en)) : null);
           const given = (s.collegeAdded || []).some((n) => hintKey(n) === hintKey(x.name));
           const cdx = classData(s.cls), sub = cdx ? cdx.subs.find((k) => k.key === s.college) : null;
-          if (given && sub) return el('div', { class: 'small muted2' }, 'даёт ' + sub.name.charAt(0).toLowerCase() + sub.name.slice(1) + ', в счёт не идёт');
+          if (given && sub) return el('div', { class: 'small muted2 nowrap' }, cdx.subNew.replace('Новое ', ''));
           return code && h && h.classes && !h.classes.includes(code) && !given ? el('div', { class: 'small warn' }, 'не из списка класса') : null;
         })()), hp.btn, editBtn('Изм.', () => spellForm(x, false))),
         hp.box));
@@ -951,7 +951,7 @@ function tabMagic(s, ro, editBtn) {
       const hp = hintParts('feature', f, 'ft:' + i);
       return el('div', { class: 'card' },
         el('div', { class: 'title' }, f.name),
-        college && (s.collegeAdded || []).some((n) => hintKey(n) === hintKey(f.name)) ? el('div', { class: 'muted2' }, 'даёт ' + college.name.charAt(0).toLowerCase() + college.name.slice(1)) : null,
+        college && (s.collegeAdded || []).some((n) => hintKey(n) === hintKey(f.name)) ? el('div', { class: 'muted2' }, cd.subNew.replace('Новое ', '')) : null,
         el('div', { class: 'btnrow' },
           hp.btn,
           f.text ? el('button', { class: opened ? 'mini solid' : 'mini', type: 'button', 'aria-expanded': String(opened), onclick: () => { if (opened) c.open.delete(i); else c.open.add(i); renderChar(); } }, 'Описание') : null,
