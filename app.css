@@ -395,3 +395,21 @@ select {
 .wpbleft { display: flex; justify-content: space-between; align-items: baseline; font-size: 16px; }
 .wpbleft strong { color: var(--gold); font-size: 18px; }
 .choice.three button { font-size: 14px; padding: 0 4px; }
+
+/* чат группы */
+.chatlist { display: flex; flex-direction: column; gap: 8px; }
+.chatmsg { padding: 10px 12px; border-radius: 12px; background: var(--card); display: flex; flex-direction: column; gap: 4px; }
+.chatmsg.mine { background: #2A2416; }
+.chathead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 13px; }
+.chattag { color: var(--gold); font-size: 12px; margin-left: 6px; }
+.chattext { font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; white-space: pre-wrap; }
+.chattext.unknown { font-style: italic; color: var(--muted); }
+.chatsys { margin: 0; text-align: center; font-size: 12px; color: var(--muted); }
+.chatsys.roll { color: var(--gold); font-size: 13px; }
+.chatempty:empty { display: none; }
+.chatbar { position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 8px; padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); background: var(--bg); border-top: 1px solid var(--line); }
+.chatform { display: flex; gap: 8px; }
+.chatform input { flex: 1 1 auto; min-width: 0; }
+.chatform .chatsend { width: 92px; flex: 0 0 auto; }
+.chips.wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+.chipbtn.on { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); }

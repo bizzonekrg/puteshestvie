@@ -218,6 +218,10 @@ async function showGroup(profile, gid) {
       el('h2', {}, `Игроки: ${(d.members || []).length}`),
       memberCards,
     ],
+    (d.is_member || (d.is_master && d.master_confirmed)) ? el('div', { class: 'card' },
+      el('div', { class: 'title' }, 'Чат группы'),
+      el('p', { class: 'muted' }, 'Переписка игроков и ведущего. Можно писать на языках персонажей и бросать кости.'),
+      chatButton(profile, gid)) : null,
     (d.is_master && d.master_confirmed) ? el('div', { class: 'card' },
       el('div', { class: 'title' }, 'Во время игры'),
       el('p', { class: 'muted' }, 'Выдайте предмет, зелье или золото всем сразу или выбранным персонажам.'),
@@ -250,7 +254,7 @@ async function playerGroupsBlock(profile) {
     error ? el('p', { class: 'error' }, 'Не удалось загрузить группы.') : null,
     groupListCards(profile, groups),
     (!error && !groups.length) ? el('p', { class: 'muted' }, 'Вы пока не в группе.') : null,
-    el('button', { class: 'btn outline', type: 'button', onclick: () => showGroups(profile) }, 'Вступить или создать группу'),
+    el('button', { class: 'btn outline', type: 'button', onclick: () => showGroups(profile) }, 'Вступить или создать группу'),    el('button', { class: 'btn link', type: 'button', onclick: () => showChatArchive(profile) }, 'Чаты прошлых игр'),
   ];
 }
 
@@ -279,6 +283,6 @@ async function masterGroupsBlock(profile) {
     el('div', { class: 'card' },
       el('div', { class: 'title' }, 'Войти в группу как ведущий'),
       el('p', { class: 'muted' }, 'Введите код группы. Предводитель подтвердит вас.'),
-      code.node, err.node, send),
+      code.node, err.node, send),    el('button', { class: 'btn link', type: 'button', onclick: () => showChatArchive(profile) }, 'Чаты прошлых игр'),
   ];
 }

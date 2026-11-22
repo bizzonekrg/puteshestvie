@@ -786,6 +786,10 @@ function tabMain(s, ro, editBtn) {
     hpCard, row3, row2,
     el('div', { class: 'cardhead' }, el('h2', {}, 'Характеристики'), editBtn('Изм.', statsForm)),
     statsGrid, passives, saves, skills,
+    el('div', { class: 'card' },
+      el('div', { class: 'cardhead' }, el('div', { class: 'title' }, 'Языки'), editBtn('Изм.', () => openLangsForm(s))),
+      el('p', {}, (Array.isArray(s.langs) && s.langs.length ? s.langs : ['Общий']).join(', ')),
+      el('p', { class: 'muted small' }, Array.isArray(s.langs) ? 'От языков зависит, что вы понимаете в чате группы.' : 'Языки ещё не отмечены. От них зависит, что вы понимаете в чате группы.')),
     weapons,
     s.profText ? el('div', { class: 'card' }, el('div', { class: 'title' }, 'Владения и языки'), s.profText.split('\n').map((t) => el('p', { class: 'muted' }, t))) : null,
     ro ? null : el('button', { class: 'btn outline', type: 'button', onclick: mainForm }, 'Изменить имя, уровень, КД'),
@@ -1093,7 +1097,8 @@ function tabGroup(c, ro) {
       el('div', { class: 'label' }, 'Персонаж состоит в группе'),
       el('div', { class: 'title' }, g.name),
       el('p', { class: 'muted' }, `Предводитель: ${g.leader_name || '—'} · игроков: ${g.members}`),
-      el('button', { class: 'btn', type: 'button', onclick: () => go(() => showGroup(c.profile, g.id)) }, 'Открыть группу'))];
+      el('button', { class: 'btn', type: 'button', onclick: () => go(() => showGroup(c.profile, g.id)) }, 'Открыть группу'),
+      chatButton(c.profile, g.id, null, 'btn outline', () => go(() => showChat(c.profile, g.id, () => openCharacter(c.profile, c.id, 'group')))))];
   }
   return [el('div', { class: 'card' },
     el('div', { class: 'title' }, 'Группа'),
