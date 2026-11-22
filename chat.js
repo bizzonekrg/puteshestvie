@@ -165,6 +165,7 @@ async function showChat(profile, gid, back) {
     el('div', { class: 'topbar' }, el('button', { class: 'mini', type: 'button', onclick: goBack }, '← Назад')),
     el('div', { class: 'head' }, el('h1', { class: 'small' }, 'Чат группы'),
       el('p', { class: 'muted' }, d.can_write ? 'Видят игроки группы и ведущий.' : 'Игра завершена. Чат остался для чтения.')),
+    d.can_write ? timerBar(gid) : null,
     fxBox, list,
     empty,
     d.can_write ? el('div', { class: 'chatbar' }, err.node,

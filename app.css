@@ -413,3 +413,11 @@ select {
 .chatform .chatsend { width: 92px; flex: 0 0 auto; }
 .chips.wrap { display: flex; flex-wrap: wrap; gap: 8px; }
 .chipbtn.on { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); }
+
+/* таймер игры */
+.timerbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); font-size: 15px; }
+.timerbar[hidden] { display: none; }
+.timerbar.warn { border-color: var(--gold); }
+.timerbar.warn strong { color: var(--gold); }
+.timerbar.over { border-color: var(--danger); }
+.timerbar.over strong { color: var(--danger); }

@@ -218,6 +218,7 @@ async function showGroup(profile, gid) {
       el('h2', {}, `Игроки: ${(d.members || []).length}`),
       memberCards,
     ],
+    (d.is_master && d.master_confirmed) ? timerMasterCard(gid) : (d.is_member ? timerBar(gid) : null),
     (d.is_member || (d.is_master && d.master_confirmed)) ? el('div', { class: 'card' },
       el('div', { class: 'title' }, 'Чат группы'),
       el('p', { class: 'muted' }, 'Переписка игроков и ведущего. Можно писать на языках персонажей и бросать кости.'),
