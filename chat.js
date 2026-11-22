@@ -56,7 +56,8 @@ async function showChat(profile, gid, back) {
     const tags = [m.is_master ? 'ведущий' : '', m.lang ? 'на языке: ' + m.lang.toLowerCase() : ''].filter(Boolean).join(' · ');
     const body = m.known ? m.text : (m.text || 'делает знаки руками');
     return el('div', { class: 'chatmsg' + (m.mine ? ' mine' : '') },
-      el('div', { class: 'chathead' }, el('span', {}, el('strong', {}, m.author), tags ? el('span', { class: 'chattag' }, tags) : null), el('span', { class: 'muted2' }, time(m.at))),
+      el('div', { class: 'chathead' }, el('strong', {}, m.author), el('span', { class: 'muted2' }, time(m.at))),
+      tags ? el('div', { class: 'chattag' }, tags) : null,
       el('div', { class: m.known ? 'chattext' : 'chattext unknown' }, body),
       m.known ? null : el('div', { class: 'muted2' }, 'Ваш персонаж не знает этого языка.'));
   };
