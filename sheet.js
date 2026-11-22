@@ -733,7 +733,7 @@ function tabMain(s, ro, editBtn) {
     el('h2', {}, 'Оружие'),
     s.weapons.map((w) => el('div', { class: 'card wcard' },
       el('div', { class: 'rowin' },
-        el('div', { class: 'grow' }, el('div', { class: 'title' }, w.name), el('p', { class: 'muted' }, `Атака ${signed(w.bonus)}${w.dmg ? ' · урон ' + w.dmg : ''}`),
+        el('div', { class: 'grow' }, el('div', { class: 'title' }, w.name), el('p', { class: 'muted wline' }, `Атака ${signed(w.bonus)}${w.dmg ? ' · урон ' + w.dmg : ''}`),
           weaponNote(s, w) ? el('p', { class: 'muted small' }, weaponNote(s, w)) : null),
         editBtn('Изм.', () => weaponForm(w, false))),
       finesseTip(s, w) ? el('p', { class: 'small warn' }, finesseTip(s, w)) : null)),

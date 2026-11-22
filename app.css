@@ -380,3 +380,4 @@ select {
 .wcard { padding: 12px 16px; gap: 8px; }
 .rowin { display: flex; flex-direction: row; align-items: center; gap: 10px; }
 .rowin .grow { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.wcard .wline { font-size: 15px; }
