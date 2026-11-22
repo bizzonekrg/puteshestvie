@@ -648,9 +648,17 @@ function tabMain(s, ro, editBtn) {
       const avg = at(die / 2 + 1), lo = at(1), hi = at(die);
       const text = n === 1 ? `По правилам на 1 уровне: ${avg} (кость к${die}, Телосложение ${signed(con)}).`
         : `По правилам на ${n} уровне: ${avg}, если брать среднее (+${die / 2 + 1} за уровень); от ${lo} до ${hi}, если бросать к${die}. Телосложение ${signed(con)}.`;
-      return [el('p', { class: 'muted small' }, text),
-        hp.max < lo || (n === 1 && hp.max !== avg) ? el('p', { class: 'small warn' }, `Сейчас максимум ${hp.max} — это меньше, чем может быть на этом уровне. Проверьте.`) : null,
-        hp.max !== avg ? el('button', { class: 'mini wide', type: 'button', onclick: () => { const d = avg - hp.max; hp.max = avg; hp.cur = clamp(hp.cur + Math.max(0, d), 0, avg); changed(); } }, `Поставить среднее: ${avg}`) : null];
+      const setAvg = () => { const d = avg - hp.max; hp.max = avg; hp.cur = clamp(hp.cur + Math.max(0, d), 0, avg); changed(); };
+      const mark = `${n}:${hp.max}`; // «всё верно» запоминаем для этого уровня и этого числа
+      const off = hp.max < lo ? 'мало' : hp.max > hi ? 'много' : '';
+      const alert = off && s.hpOk !== mark ? el('div', { class: 'hpwarn' },
+        el('p', { class: 'title' }, 'Хиты не соответствуют уровню'),
+        el('p', {}, `Максимум хитов ${hp.max} — это ${off === 'мало' ? 'меньше' : 'больше'}, чем может быть на ${n} уровне (${lo === hi ? 'должно быть ' + lo : 'от ' + lo + ' до ' + hi}). ${off === 'мало' ? 'Возможно, вы забыли прибавить хиты за новый уровень.' : 'Возможно, записано лишнее.'} Уточните у ведущего.`),
+        el('div', { class: 'btnrow' },
+          el('button', { class: 'mini solid', type: 'button', onclick: setAvg }, `Поставить ${avg}`),
+          el('button', { class: 'mini', type: 'button', onclick: () => { s.hpOk = mark; changed(); } }, 'Всё верно, скрыть'))) : null;
+      return [alert, el('p', { class: 'muted small' }, text),
+        hp.max !== avg && !alert ? el('button', { class: 'mini wide', type: 'button', onclick: setAvg }, `Поставить среднее: ${avg}`) : null];
     })());
 
   const tile = (label, value) => el('div', { class: 'tile' }, el('div', { class: 'label' }, label), el('div', { class: 'tval' }, value));
