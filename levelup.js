@@ -152,11 +152,13 @@ function openLevelUp(s, from, to) {
         plan.pickSub ? el('p', { class: 'small warn' }, `Пора выбрать ${plan.pickSub} — на вкладке «Магия».`) : null) : null,
       el('button', { class: 'btn', type: 'button', onclick: () => {
         levelUpApply(s, plan, input.value, [...picked]);
+        s.levelDone = n;
         close(); changed(); show(idx + 1);
       } }, last ? 'Применить' : 'Применить и дальше'),
       el('button', { class: 'btn link', type: 'button', onclick: () => {
         // «Позже»: уровень уже записан; бонус мастерства ставим по уровню, остальное не трогаем
         s.prof = profAt(s.level);
+        s.levelDone = s.level;
         close(); changed();
       } }, 'Позже'),
       el('p', { class: 'muted small center' }, '«Позже»: уровень поменяется, остальное останется как было.'));

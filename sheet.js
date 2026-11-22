@@ -478,6 +478,10 @@ async function openCharacter(profile, id, tab, back) {
   const opened = CH;
   renderChar();
   if (opened.own) {
+    // levelDone — уровень, для которого окно «Новый уровень» уже пройдено. Если уровень поднял ведущий наградой, окно откроется здесь.
+    if (!Number.isFinite(s.levelDone)) { s.levelDone = s.level; changed(); }
+    else if (s.level > s.levelDone) openLevelUp(s, s.levelDone, s.level);
+    else if (s.level < s.levelDone) { s.levelDone = s.level; changed(); }
     checkGifts(opened);
     // раз в 15 секунд смотрим, не выдал ли что-нибудь ведущий
     const timer = setInterval(() => {
@@ -757,6 +761,8 @@ function tabMain(s, ro, editBtn) {
       s.level = clamp(v.level, 1, 20); s.ac = v.ac; s.speed = Math.max(0, v.speed); s.prof = clamp(v.prof, 0, 10);
       const up = s.level > oldLevel;
       if (s.level < oldLevel && s.prof === oldProf) s.prof = profAt(s.level);
+      if (s.level < oldLevel) s.levelDone = s.level;
+      if (up && !Number.isFinite(s.levelDone)) s.levelDone = oldLevel;
       changed();
       if (up) openLevelUp(s, oldLevel, s.level); // бонус мастерства и остальное — в окне «Новый уровень»
     },
