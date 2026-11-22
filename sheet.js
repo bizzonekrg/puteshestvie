@@ -563,6 +563,17 @@ function weaponNote(s, w) {
   return note.replace(/\s*(·\s*)?мастерство:.*$/i, '').trim();
 }
 
+// Фехтовальное оружие: по правилам игрок выбирает Силу или Ловкость. Если в листе стоит меньше лучшего — маленькая заметка.
+function finesseTip(s, w) {
+  const key = hintKey(w.name || '');
+  const cat = CATALOG.find((it) => it.kind === 'weapon' && hintKey(it.name) === key);
+  if (!(cat && cat.ability === 'best') && !/фехтовальн/i.test(w.note || '')) return '';
+  const ab = modOf(s.stats.dex) > modOf(s.stats.str) ? 'dex' : 'str';
+  const best = modOf(s.stats[ab]) + toInt(s.prof, 0);
+  if (!(best > toInt(w.bonus, 0))) return '';
+  return `Фехтовальное: по правилам можно бить от ${ab === 'dex' ? 'Ловкости' : 'Силы'} — атака была бы ${signed(best)}. Спросите у ведущего.`;
+}
+
 function skillBonus(s, sk) { return modOf(s.stats[sk.stat]) + s.prof * (sk.prof || 0); }
 
 function renderChar() {
@@ -722,7 +733,8 @@ function tabMain(s, ro, editBtn) {
     el('h2', {}, 'Оружие'),
     s.weapons.map((w) => el('div', { class: 'card rowcard' },
       el('div', { class: 'grow' }, el('div', { class: 'title' }, w.name), el('p', { class: 'muted' }, `Атака ${signed(w.bonus)}${w.dmg ? ' · урон ' + w.dmg : ''}`),
-        weaponNote(s, w) ? el('p', { class: 'muted small' }, weaponNote(s, w)) : null),
+        weaponNote(s, w) ? el('p', { class: 'muted small' }, weaponNote(s, w)) : null,
+        finesseTip(s, w) ? el('p', { class: 'small warn' }, finesseTip(s, w)) : null),
       editBtn('Изменить', () => weaponForm(w, false)))),
     ro ? null : el('button', { class: 'btn dashed', type: 'button', onclick: () => weaponForm({ name: '', bonus: 0, dmg: '' }, true) }, '+ Добавить оружие'),
   ];
