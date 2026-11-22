@@ -793,7 +793,11 @@ function tabMain(s, ro, editBtn) {
       el('p', {}, (Array.isArray(s.langs) && s.langs.length ? s.langs : ['Общий']).join(', ')),
       el('p', { class: 'muted small' }, Array.isArray(s.langs) ? 'От языков зависит, что вы понимаете в чате группы.' : 'Языки ещё не отмечены. От них зависит, что вы понимаете в чате группы.')),
     weapons,
-    s.profText ? el('div', { class: 'card' }, el('div', { class: 'title' }, 'Владения и языки'), s.profText.split('\n').map((t) => el('p', { class: 'muted' }, t))) : null,
+    (() => {
+      // языки показаны в карточке «Языки», здесь только владения
+      const lines = String(s.profText || '').split('\n').filter((t) => t.trim() && !/^\s*(?:знание\s+)?язык(?:и|ов)\s*:/i.test(t));
+      return lines.length ? el('div', { class: 'card' }, el('div', { class: 'title' }, 'Владения'), lines.map((t) => el('p', { class: 'muted' }, t))) : null;
+    })(),
     ro ? null : el('button', { class: 'btn outline', type: 'button', onclick: mainForm }, 'Изменить имя, уровень, КД'),
   ];
 }
