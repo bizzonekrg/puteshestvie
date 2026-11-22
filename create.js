@@ -214,6 +214,7 @@ function buildCreatedSheet(w) {
     weapons, gold, coins: {}, items,
     spell: { dc: 8 + prof + castMod, atk: prof + castMod, slots }, spells, features,
     profText: c.prof + (tools ? ' Инструмент от предыстории: ' + tools + '.' : ''),
+    langs: ['Общий'].concat((w.langs || []).slice(0, 2)),
     extraSpells: given, created: 'wizard',
   };
 }
@@ -222,7 +223,7 @@ function buildCreatedSheet(w) {
 
 function showCreate(profile) {
   const w = { step: 1, name: '', cls: '', level: 1, bg: '', bgMode: '21', b2: '', b1: '', customBg: '', customFeat: '', customSkills: [], bgEq: 'pack',
-    species: '', speciesOpt: '', speciesSkill: '', humanFeat: '', method: 'array', base: {}, bonus: {}, classSkills: [], eq: 0 };
+    species: '', speciesOpt: '', speciesSkill: '', humanFeat: '', method: 'array', base: {}, bonus: {}, classSkills: [], eq: 0, langs: [] };
   const STD = [15, 14, 13, 12, 10, 8];
   // Покупка за очки по правилам 2024: 27 очков, значения от 8 до 15
   const PB_COST = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 }, PB_TOTAL = 27;
@@ -366,17 +367,20 @@ function showCreate(profile) {
     w.classSkills = w.classSkills.filter((x) => !locked.includes(x));
     const list = c.skills || ALL_SKILLS;
     const can = Math.min(c.n, list.filter((x) => !locked.includes(x)).length);
-    return [head('Навыки и снаряжение', 'Что персонаж умеет и что у него с собой.'), bar(),
+    return [head('Навыки, языки и снаряжение', 'Что персонаж умеет и что у него с собой.'), bar(),
       el('div', { class: 'card' }, el('div', { class: 'title' }, `Навыки класса: выбрано ${w.classSkills.length} из ${can}`),
         el('p', { class: 'muted' }, 'К проверке навыка, которым владеете, прибавляется бонус мастерства. Навыки от предыстории и вида уже отмечены.'),
         el('div', { class: 'wchecks' }, checks(list, w.classSkills, can, locked))),
+      el('div', { class: 'card' }, el('div', { class: 'title' }, `Языки: выбрано ${w.langs.length} из 2`),
+        el('p', { class: 'muted' }, 'Общий язык знают все. По правилам персонаж знает ещё два. От языков зависит, что вы понимаете в чате группы.'),
+        el('div', { class: 'wchecks' }, checks(CHAT_LANGS.filter((x) => x !== 'Общий' && x !== 'Язык зверей'), w.langs, 2, []))),
       el('div', { class: 'card' }, el('div', { class: 'title' }, 'Снаряжение класса'),
         c.eq.map((e, i) => pick(e.label, [].concat((e.a ? [C_ARMOR[e.a][0]] : []), e.sh ? ['Щит'] : [], (e.w || []).concat(e.i || []).map(([n, q]) => (q > 1 ? `${n} × ${q}` : n)), [e.g + ' зм']).join(', '), w.eq === i, () => { w.eq = i; draw(); }))),
       b.custom ? el('p', { class: 'muted small' }, 'От своей предыстории сайт даст 50 зм: вещи впишете в листе.') : el('div', { class: 'card' }, el('div', { class: 'title' }, 'Снаряжение предыстории'),
         pick('Набор: ' + b.name.toLowerCase(), b.items.map(([n, q]) => (q > 1 ? `${n} × ${q}` : n)).join(', ') + ', ' + b.gold + ' зм', w.bgEq === 'pack', () => { w.bgEq = 'pack'; draw(); }),
         pick('Только золото', '50 зм', w.bgEq === 'gold', () => { w.bgEq = 'gold'; draw(); })),
       el('p', { class: 'muted small' }, 'Спасброски, владение доспехами и оружием класс даёт без выбора. Сайт отметит их сам.'),
-      err.node, nav(() => go(w.classSkills.length < can ? `Выберите навыки класса: ещё ${can - w.classSkills.length}.` : ''))];
+      err.node, nav(() => go(w.classSkills.length < can ? `Выберите навыки класса: ещё ${can - w.classSkills.length}.` : w.langs.length < 2 ? `Выберите языки: ещё ${2 - w.langs.length}.` : ''))];
   }
 
   function step6() {

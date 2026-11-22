@@ -110,10 +110,6 @@ async function showChat(profile, gid, back) {
       const cur = langKey(x) === langKey(lang || 'Общий');
       return el('button', { class: 'chipbtn' + (cur ? ' on' : ''), type: 'button', onclick: () => { lang = langKey(x) === 'общий' ? '' : x; fixLang(); close(); } }, x);
     })),
-    d.is_master ? el('button', { class: 'mini wide', type: 'button', onclick: () => {
-      const name = (window.prompt('Название языка') || '').trim().slice(0, 40);
-      if (name) { lang = langKey(name) === 'общий' ? '' : name; fixLang(); close(); }
-    } }, 'Другой язык…') : null,
     el('p', { class: 'muted small' }, d.is_master
       ? 'Вам доступны все языки. Кто языка не знает, увидит тарабарщину.'
       : 'Здесь языки вашего персонажа. Отметить их можно в листе: «Персонаж» → «Языки». Кто языка не знает, увидит тарабарщину.'),
@@ -226,13 +222,9 @@ function openLangsForm(s) {
       b.addEventListener('click', () => { const i = cur.findIndex((y) => langKey(y) === langKey(x)); if (i >= 0) cur.splice(i, 1); else cur.push(x); draw(); });
       return b;
     };
-    const inp = el('input', { id: 'ownlang', type: 'text', placeholder: 'Например: Древний имперский', maxlength: '40', autocomplete: 'off' });
     body.replaceChildren(
       el('div', { class: 'wchecks' }, CHAT_LANGS.map((x) => check(x, langKey(x) === 'общий')), custom.map((x) => check(x, false))),
-      el('p', { class: 'muted small' }, '«Язык зверей» отмечайте, только если персонаж понимает зверей постоянно. Если на время, через заклинание, — это кнопка «Умения» в чате группы.'),
-      el('div', { class: 'field' }, el('label', { for: 'ownlang' }, 'Свой язык'), inp,
-        el('p', { class: 'muted small' }, 'Языка нет в списке — впишите название. У всех, кто его знает, оно должно быть написано одинаково.')),
-      el('button', { class: 'mini wide', type: 'button', onclick: () => { const v = inp.value.trim().slice(0, 40); if (v && !has(v)) { cur.push(v); draw(); } } }, 'Добавить свой язык'));
+      el('p', { class: 'muted small' }, '«Язык зверей» отмечайте, только если персонаж понимает зверей постоянно. Если на время, через заклинание, — это кнопка «Умения» в чате группы.'));
   };
   draw();
   const box = el('div', { class: 'modal stack' }, el('div', { class: 'title' }, 'Языки'),
