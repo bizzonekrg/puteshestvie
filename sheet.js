@@ -1210,10 +1210,10 @@ function applyGift(s, g) {
   if (g.kind === 'weapon') {
     const ab = g.ability === 'dex' ? 'dex' : g.ability === 'str' ? 'str' : (modOf(s.stats.dex) > modOf(s.stats.str) ? 'dex' : 'str');
     const bonus = modOf(s.stats[ab]) + (toInt(s.prof, 0));
-    const dmg = dmgWithMod(g.dmg || '', modOf(s.stats[ab]));
+    const dmg = g.dmg || ''; // модификатор к урону пока не дописываем: вопрос к ведущему открыт (dmgWithMod готов)
     s.weapons.push({ name: g.name, bonus, dmg, note: [g.props, g.descr].filter(Boolean).join('. ') });
     addItem(s, g.name, qty, '');
-    return { title: `${g.name}${count} — добавлено в «Оружие» и «Вещи»`, sub: `Атака ${signed(bonus)}${dmg ? ' · урон ' + dmg : ''}. Атаку и урон сайт посчитал сам, поправьте, если нужно.` };
+    return { title: `${g.name}${count} — добавлено в «Оружие» и «Вещи»`, sub: `Атака ${signed(bonus)}${dmg ? ' · урон ' + dmg : ''}. Бонус атаки сайт посчитал сам, поправьте, если нужно.` };
   }
   addItem(s, g.name, qty, g.descr || '');
   return { title: `${g.name}${count} — добавлено в «Вещи»`, sub: g.descr || '' };

@@ -7,7 +7,7 @@
 <title>Отправиться в путешествие?</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Philosopher:wght@700&display=swap">
-<link rel="stylesheet" href="app.css?v=53">
+<link rel="stylesheet" href="app.css?v=54">
 </head>
 <body>
 <main id="app" class="screen">
@@ -16,7 +16,7 @@
 <noscript><p style="color:#EDEAE2;padding:24px">Для работы сайта включите JavaScript в браузере.</p></noscript>
 <script>
 // Проверка свежести: если на сервере версия новее той, что показал телефон, страница перезагружается сама.
-window.APP_VERSION = 53;
+window.APP_VERSION = 54;
 fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
   if (!j || !(j.v > window.APP_VERSION)) return;
   var tried = null;
@@ -26,16 +26,16 @@ fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) {
 }).catch(function () {});
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="catalog.js?v=53"></script>
-<script src="hints.js?v=53"></script>
-<script src="classes.js?v=53"></script>
-<script src="spellclasses.js?v=53"></script>
-<script src="sheet.js?v=53"></script>
-<script src="create.js?v=53"></script>
-<script src="groups.js?v=53"></script>
-<script src="guilds.js?v=53"></script>
-<script src="give.js?v=53"></script>
-<script src="finish.js?v=53"></script>
-<script src="app.js?v=53"></script>
+<script src="catalog.js?v=54"></script>
+<script src="hints.js?v=54"></script>
+<script src="classes.js?v=54"></script>
+<script src="spellclasses.js?v=54"></script>
+<script src="sheet.js?v=54"></script>
+<script src="create.js?v=54"></script>
+<script src="groups.js?v=54"></script>
+<script src="guilds.js?v=54"></script>
+<script src="give.js?v=54"></script>
+<script src="finish.js?v=54"></script>
+<script src="app.js?v=54"></script>
 </body>
 </html>
