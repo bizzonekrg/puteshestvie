@@ -479,6 +479,8 @@ async function openCharacter(profile, id, tab, back) {
   renderChar();
   if (opened.own) {
     // levelDone — уровень, для которого окно «Новый уровень» уже пройдено. Если уровень поднял ведущий наградой, окно откроется здесь.
+    // языки нужны серверу для чата: если их ещё нет в листе, берём из строки «Знание языков»
+    if (!Array.isArray(s.langs)) { s.langs = langsFromText(s.profText); changed(); }
     if (!Number.isFinite(s.levelDone)) { s.levelDone = s.level; changed(); }
     else if (s.level > s.levelDone) openLevelUp(s, s.levelDone, s.level);
     else if (s.level < s.levelDone) { s.levelDone = s.level; changed(); }

@@ -199,6 +199,19 @@ async function showChatArchive(profile) {
     (!error && !(data || []).length) ? el('p', { class: 'muted' }, 'Пока пусто. Чат появится здесь после завершённой игры, в которой переписывались.') : null);
 }
 
+// Языки из строки «Знание языков: …» (так их записывает CharBox). Общий есть всегда.
+function langsFromText(text) {
+  const m = /(?:^|\n)\s*(?:знание\s+)?язык(?:и|ов)\s*:\s*([^\n]+)/i.exec(String(text || ''));
+  const out = ['Общий'];
+  if (m) for (const raw of m[1].split(/[,;]/)) {
+    const v = raw.trim().replace(/\.$/, '').slice(0, 40);
+    if (!v) continue;
+    const std = CHAT_LANGS.find((x) => langKey(x) === langKey(v));
+    if (!out.some((x) => langKey(x) === langKey(std || v))) out.push(std || v);
+  }
+  return out;
+}
+
 // Окно выбора языков в листе персонажа
 function openLangsForm(s) {
   const cur = Array.isArray(s.langs) && s.langs.length ? s.langs.slice() : ['Общий'];
