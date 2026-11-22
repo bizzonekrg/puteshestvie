@@ -137,7 +137,7 @@ async function showGuild(profile, gid) {
     el('h2', {}, 'Состав'),
     d.members.map((m) => el('div', { class: 'card rowcard slim' },
       el('div', { class: 'grow' }, m.name + (m.me ? ' (вы)' : ''), el('p', { class: 'muted small' }, GUILD_RANK[m.rank] + ' · ' + guildWho(m))),
-      canTouch(m) ? el('button', { class: 'mini', type: 'button', onclick: () => memberMenu(m) }, 'Изменить') : null)),
+      canTouch(m) ? el('button', { class: 'mini', type: 'button', onclick: () => memberMenu(m) }, 'Изм.') : null)),
 
     d.status === 'active' ? [el('h2', {}, 'Последние походы'),
       d.sorties.length ? d.sorties.map(sortieCard) : el('p', { class: 'muted' }, 'Походов пока нет. Они появятся после первой завершённой игры с участием гильдии.'),
@@ -149,7 +149,7 @@ async function showGuild(profile, gid) {
         fields: [{ key: 'name', label: 'Название', value: d.name }, { key: 'descr', label: 'Описание', area: true, value: d.descr }],
         onSave: async (v) => { const { error: e } = await sb.rpc('guild_update', { p_name: v.name, p_descr: v.descr }); if (e) err.set(rpcError(e)); await reload(); },
       }) }, 'Изменить название и описание'),
-      el('p', { class: 'muted small' }, isLeader ? 'Назначить заместителя, передать главенство или исключить: кнопка «Изменить» у участника в составе.' : 'Вы заместитель: принимаете заявки, исключаете участников и меняете описание.'),
+      el('p', { class: 'muted small' }, isLeader ? 'Назначить заместителя, передать главенство или исключить: кнопка «Изм.» у участника в составе.' : 'Вы заместитель: принимаете заявки, исключаете участников и меняете описание.'),
       isLeader ? (() => {
         const b = el('button', { class: 'btn outline danger', type: 'button' }, 'Распустить гильдию');
         b.addEventListener('click', () => { if (window.confirm(`Распустить гильдию «${d.name}»? Состав и заявки удалятся, вернуть будет нельзя.`)) act(b, 'guild_disband', {}, () => showGuilds(profile)); });

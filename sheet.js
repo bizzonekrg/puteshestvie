@@ -634,7 +634,7 @@ function tabMain(s, ro, editBtn) {
   const step = (d) => { hp.cur = clamp(hp.cur + d, 0, hp.max); changed(); };
   const hpCard = el('div', { class: 'card' },
     el('div', { class: 'cardhead' }, el('span', { class: 'label caps' }, 'Хиты'),
-      editBtn('Изменить', () => openForm({
+      editBtn('Изм.', () => openForm({
         title: 'Хиты',
         fields: [
           { key: 'cur', label: 'Сейчас', numeric: true, value: hp.cur, fallback: hp.cur },
@@ -682,14 +682,14 @@ function tabMain(s, ro, editBtn) {
       title,
       fields: [{ key: 'v', label: title + (suffix ? `, ${suffix}` : ''), numeric: true, value: s[key], fallback: s[key] }],
       onSave: (v) => { s[key] = Math.max(0, v.v); changed(); },
-    }) }, 'Изменить'));
+    }) }, 'Изм.'));
   const wallet = el('div', { class: 'card tight' },
     el('div', { class: 'label' }, 'Монеты'),
     el('div', { class: 'coincol' }, (() => {
       const have = COINS.map(([k, short]) => [coinGet(s, k), short]).filter(([n]) => n > 0);
       return (have.length ? have : [[0, 'зм']]).map(([n, short]) => el('div', { class: 'nowrap' }, `${n} ${short}`));
     })()),
-    ro ? null : el('button', { class: 'mini wide', type: 'button', onclick: () => walletForm(s) }, 'Изменить'));
+    ro ? null : el('button', { class: 'mini wide', type: 'button', onclick: () => walletForm(s) }, 'Изм.'));
   const row2 = el('div', { class: 'grid2' }, numCard('Опыт', String(s.xp), 'Опыт', 'xp'), wallet);
 
   const statsGrid = el('div', { class: 'grid3' }, STAT_KEYS.map((k) => el('div', { class: 'tile' },
@@ -703,7 +703,7 @@ function tabMain(s, ro, editBtn) {
   const listRow = (p, label, value, onTap) => (editing
     ? el('button', { class: 'lrow tap', type: 'button', onclick: onTap }, el('span', {}, mark(p) + label), el('strong', {}, value))
     : el('div', { class: 'lrow' }, el('span', {}, mark(p) + label), el('strong', {}, value)));
-  const profToggleBtn = () => (ro ? null : el('button', { class: editing ? 'mini solid' : 'mini', type: 'button', onclick: () => { CH.editProf = !CH.editProf; renderChar(); } }, editing ? 'Готово' : 'Изменить'));
+  const profToggleBtn = () => (ro ? null : el('button', { class: editing ? 'mini solid' : 'mini', type: 'button', onclick: () => { CH.editProf = !CH.editProf; renderChar(); } }, editing ? 'Готово' : 'Изм.'));
   const profToggle = profToggleBtn();
   const saves = el('div', { class: 'card' }, el('div', { class: 'cardhead' }, el('div', { class: 'title' }, 'Спасброски'), profToggle),
     editing ? el('p', { class: 'muted small' }, 'Нажмите на строку, чтобы поставить или снять владение.') : null,
@@ -776,7 +776,7 @@ function tabMain(s, ro, editBtn) {
 
   return [
     hpCard, row3, row2,
-    el('div', { class: 'cardhead' }, el('h2', {}, 'Характеристики'), editBtn('Изменить', statsForm)),
+    el('div', { class: 'cardhead' }, el('h2', {}, 'Характеристики'), editBtn('Изм.', statsForm)),
     statsGrid, passives, saves, skills,
     weapons,
     s.profText ? el('div', { class: 'card' }, el('div', { class: 'title' }, 'Владения и языки'), s.profText.split('\n').map((t) => el('p', { class: 'muted' }, t))) : null,
@@ -796,7 +796,7 @@ function tabItems(s, ro, editBtn) {
   });
   return [
     el('div', { class: 'card' },
-      el('div', { class: 'cardhead' }, el('div', { class: 'title' }, 'Кошелёк'), editBtn('Изменить', () => walletForm(s))),
+      el('div', { class: 'cardhead' }, el('div', { class: 'title' }, 'Кошелёк'), editBtn('Изм.', () => walletForm(s))),
       COINS.map(([k, short, full]) => el('div', { class: 'kv' }, el('span', { class: 'muted' }, full), el('strong', {}, `${coinGet(s, k)} ${short}`)))),
     el('h2', {}, 'Снаряжение'),
     s.items.length ? null : el('p', { class: 'muted' }, 'Предметов пока нет.'),
