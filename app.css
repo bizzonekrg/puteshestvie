@@ -381,3 +381,8 @@ select {
 .rowin { display: flex; flex-direction: row; align-items: center; gap: 10px; }
 .rowin .grow { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
 .wcard .wline { font-size: 13px; }
+
+/* окно «Новый уровень» */
+.lvh { font-size: 16px; font-weight: 700; }
+.lvkv { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
+.lvval { font-weight: 600; text-align: right; }

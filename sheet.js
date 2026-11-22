@@ -755,8 +755,10 @@ function tabMain(s, ro, editBtn) {
       s.name = (v.name || s.name).slice(0, 80); s.cls = v.cls; s.species = v.species;
       const oldLevel = s.level, oldProf = s.prof;
       s.level = clamp(v.level, 1, 20); s.ac = v.ac; s.speed = Math.max(0, v.speed); s.prof = clamp(v.prof, 0, 10);
-      if (s.level !== oldLevel && s.prof === oldProf) s.prof = 2 + Math.floor((s.level - 1) / 4);
+      const up = s.level > oldLevel;
+      if (s.level < oldLevel && s.prof === oldProf) s.prof = profAt(s.level);
       changed();
+      if (up) openLevelUp(s, oldLevel, s.level); // бонус мастерства и остальное — в окне «Новый уровень»
     },
     deleteText: 'Удалить персонажа',
     onDelete: async () => {
