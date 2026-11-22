@@ -461,7 +461,7 @@ let CH = null; // открытый персонаж: { profile, id, sheet, tab, 
 
 async function openCharacter(profile, id, tab, back) {
   show(false, el('p', { class: 'muted center' }, 'Загрузка…'));
-  const { data, error } = await sb.from('characters').select('id, owner_id, sheet').eq('id', id).maybeSingle();
+  const { data, error } = await sb.from('characters').select('id, owner_id, sheet, rev').eq('id', id).maybeSingle();
   if (error || !data || !data.sheet || !data.sheet.stats) {
     return show(true,
       el('p', { class: 'error' }, 'Не удалось открыть персонажа.'),
@@ -474,7 +474,7 @@ async function openCharacter(profile, id, tab, back) {
   s.skills = s.skills || []; s.saves = s.saves || {}; s.spell = s.spell || { dc: 10, atk: 0, slots: [] };
   s.spell.slots = s.spell.slots || [];
   s.coins = s.coins || {};
-  CH = { profile, id: data.id, own: data.owner_id === profile.id, sheet: s, tab: tab || 'main', open: new Set(), saveState: 'saved', timer: null, badge: null, back: back || null, group: undefined, notices: [], checking: false };
+  CH = { profile, id: data.id, own: data.owner_id === profile.id, sheet: s, tab: tab || 'main', open: new Set(), saveState: 'saved', timer: null, badge: null, back: back || null, group: undefined, notices: [], checking: false, stamp: data.rev, base: JSON.stringify(s) };
   const opened = CH;
   renderChar();
   if (opened.own) {
@@ -491,17 +491,53 @@ function badgeText(state) {
   return state === 'saving' ? 'Сохраняем…' : state === 'error' ? 'Не сохранилось. Проверьте интернет' : 'Сохранено';
 }
 
+// Слияние листов: base — каким лист был при последней сверке, mine — мой, theirs — свежий с сервера.
+// Что менял я — остаётся моим; что я не трогал — берётся с сервера. Списки сравниваются целиком.
+function mergeSheet(base, mine, theirs) {
+  const plain = (x) => x && typeof x === 'object' && !Array.isArray(x);
+  if (plain(mine) && plain(theirs)) {
+    const b = plain(base) ? base : {};
+    const out = {};
+    for (const k of new Set([...Object.keys(mine), ...Object.keys(theirs)])) {
+      const inMine = k in mine, inTheirs = k in theirs;
+      if (inMine && inTheirs) out[k] = mergeSheet(b[k], mine[k], theirs[k]);
+      else if (inMine) { if (!(k in b) || JSON.stringify(mine[k]) !== JSON.stringify(b[k])) out[k] = mine[k]; }
+      else if (!(k in b)) out[k] = theirs[k];
+    }
+    return out;
+  }
+  return JSON.stringify(mine) !== JSON.stringify(base) ? mine : theirs;
+}
+
 async function saveNow() {
   const c = CH;
   if (!c) return;
   clearTimeout(c.timer);
   c.timer = null;
   const s = c.sheet;
-  const { data, error } = await sb.from('characters')
-    .update({ sheet: s, name: s.name, class_name: s.cls, species: s.species, level: s.level })
-    .eq('id', c.id).select('id');
+  let failed = false;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const sent = JSON.stringify(s);
+    const { data, error } = await sb.from('characters')
+      .update({ sheet: s, name: s.name, class_name: s.cls, species: s.species, level: s.level })
+      .eq('id', c.id).eq('rev', c.stamp).select('id, rev');
+    if (error) { failed = true; break; }
+    if (data && data.length) { c.stamp = data[0].rev; c.base = sent; failed = false; break; }
+    // лист на сервере изменил кто-то другой — берём свежий и вносим в него свои правки
+    failed = true;
+    const fresh = await sb.from('characters').select('sheet, rev').eq('id', c.id).maybeSingle();
+    if (fresh.error || !fresh.data || !fresh.data.sheet) break;
+    let base = {};
+    try { base = JSON.parse(c.base); } catch (e) { base = {}; }
+    const merged = mergeSheet(base, JSON.parse(JSON.stringify(s)), fresh.data.sheet);
+    Object.keys(s).forEach((k) => delete s[k]);
+    Object.assign(s, merged);
+    c.stamp = fresh.data.rev;
+    c.base = JSON.stringify(fresh.data.sheet);
+    if (CH === c && !document.querySelector('.modal')) renderChar();
+  }
   if (c.timer) return; // пока сохраняли, появились новые правки — их сохранит следующий запуск
-  c.saveState = (error || !data || !data.length) ? 'error' : 'saved';
+  c.saveState = failed ? 'error' : 'saved';
   if (c.badge) { c.badge.textContent = badgeText(c.saveState); c.badge.classList.toggle('bad', c.saveState === 'error'); }
 }
 
