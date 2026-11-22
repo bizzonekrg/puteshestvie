@@ -224,6 +224,9 @@ function showCreate(profile) {
   const w = { step: 1, name: '', cls: '', level: 1, bg: '', bgMode: '21', b2: '', b1: '', customBg: '', customFeat: '', customSkills: [], bgEq: 'pack',
     species: '', speciesOpt: '', speciesSkill: '', humanFeat: '', method: 'array', base: {}, bonus: {}, classSkills: [], eq: 0 };
   const STD = [15, 14, 13, 12, 10, 8];
+  // Покупка за очки по правилам 2024: 27 очков, значения от 8 до 15
+  const PB_COST = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 }, PB_TOTAL = 27;
+  const pbSpent = () => STAT_KEYS.reduce((sum, k) => sum + (PB_COST[w.base[k]] || 0), 0);
   const cls = () => C_CLASSES.find((x) => x.name === w.cls);
   const bg = () => C_BACKGROUNDS.find((x) => x.name === w.bg);
   const sp = () => C_SPECIES.find((x) => x.name === w.species);
@@ -316,7 +319,8 @@ function showCreate(profile) {
 
   function step4() {
     const c = cls();
-    if (!Object.keys(w.base).length) c.rec.forEach((k, i) => { w.base[k] = STD[i]; });
+    const setRec = () => { c.rec.forEach((k, i) => { w.base[k] = STD[i]; }); }; // совет классу; стоит ровно 27 очков
+    if (!Object.keys(w.base).length) setRec();
     calcBonus();
     const rows = STAT_KEYS.map((k) => {
       let input;
@@ -324,21 +328,34 @@ function showCreate(profile) {
         input = el('select', { 'aria-label': STAT_FULL[k] }, STD.map((v) => el('option', { value: String(v) }, String(v))));
         input.value = String(w.base[k]);
         input.addEventListener('change', () => { const v = toInt(input.value, 10); const other = STAT_KEYS.find((x) => x !== k && w.base[x] === v); if (other) w.base[other] = w.base[k]; w.base[k] = v; draw(); });
+      } else if (w.method === 'points') {
+        const v = w.base[k], left = PB_TOTAL - pbSpent();
+        const canUp = v < 15 && PB_COST[v + 1] - PB_COST[v] <= left;
+        input = el('div', { class: 'wpb' },
+          el('button', { type: 'button', disabled: v <= 8, 'aria-label': STAT_FULL[k] + ': меньше', onclick: () => { w.base[k] = v - 1; draw(); } }, '−'),
+          el('span', {}, String(v)),
+          el('button', { type: 'button', disabled: !canUp, 'aria-label': STAT_FULL[k] + ': больше', onclick: () => { w.base[k] = v + 1; draw(); } }, '+'));
       } else {
         input = el('input', { type: 'text', inputmode: 'numeric', 'aria-label': STAT_FULL[k] }); input.value = String(w.base[k]);
         input.addEventListener('change', () => { w.base[k] = clamp(toInt(input.value, 10), 3, 18); draw(); });
       }
       const tot = Math.min(20, toInt(w.base[k], 10) + (w.bonus[k] || 0));
-      return el('div', { class: 'wstat' }, el('div', {}, STAT_FULL[k], c.rec[0] === k ? el('div', { class: 'small warn' }, 'главная для класса') : null), input,
+      return el('div', { class: 'wstat' + (w.method === 'points' ? ' pb' : '') }, el('div', {}, STAT_FULL[k], c.rec[0] === k ? el('div', { class: 'small warn' }, 'главная для класса') : null), input,
         el('span', { class: 'muted' }, w.bonus[k] ? '+' + w.bonus[k] : ''), el('strong', {}, `${tot} (${signed(modOf(tot))})`));
     });
     return [head('Характеристики', 'Шесть чисел, от которых считаются все броски. В скобках модификатор: его и прибавляют к броску.'), bar(),
-      el('div', { class: 'choice' },
-        el('button', { type: 'button', 'aria-pressed': String(w.method === 'array'), onclick: () => { w.method = 'array'; c.rec.forEach((k, i) => { w.base[k] = STD[i]; }); draw(); } }, 'Стандартный набор'),
-        el('button', { type: 'button', 'aria-pressed': String(w.method === 'own'), onclick: () => { w.method = 'own'; draw(); } }, 'Свои значения')),
+      el('div', { class: 'choice three' },
+        el('button', { type: 'button', 'aria-pressed': String(w.method === 'array'), onclick: () => { w.method = 'array'; setRec(); draw(); } }, 'Готовый набор'),
+        el('button', { type: 'button', 'aria-pressed': String(w.method === 'points'), onclick: () => { w.method = 'points'; setRec(); draw(); } }, 'За очки'),
+        el('button', { type: 'button', 'aria-pressed': String(w.method === 'own'), onclick: () => { w.method = 'own'; draw(); } }, 'Бросал кости')),
       el('div', { class: 'card' },
-        el('p', { class: 'muted' }, w.method === 'array' ? 'Числа 15, 14, 13, 12, 10, 8 раздаются по одному разу. Сайт уже расставил их так, как советуют этому классу. Меняете одно, второе встанет на его место.' : 'Впишите значения от 3 до 18, которые вы бросили костями или купили за очки.'),
-        w.method === 'array' ? el('button', { class: 'mini wide', type: 'button', onclick: () => { c.rec.forEach((k, i) => { w.base[k] = STD[i]; }); draw(); } }, 'Расставить как советуют: ' + c.name.toLowerCase()) : null,
+        w.method === 'array' ? el('p', { class: 'muted' }, 'Числа 15, 14, 13, 12, 10, 8 раздаются по одному разу. Сайт уже расставил их так, как советуют этому классу. Меняете одно, второе встанет на его место.') : null,
+        w.method === 'points' ? [el('div', { class: 'wpbleft' }, el('span', {}, 'Осталось очков'), el('strong', {}, `${PB_TOTAL - pbSpent()} из ${PB_TOTAL}`)),
+          el('p', { class: 'muted' }, 'Каждое число от 8 до 15. Чем выше, тем дороже: до 13 каждый шаг стоит 1 очко, 14 и 15 — по 2. Когда очки кончатся, «+» перестанет нажиматься.')] : null,
+        w.method === 'own' ? [el('p', { class: 'small warn' }, 'Только если бросали кости при ведущем. Иначе выберите «Готовый набор» или «За очки».'),
+          el('p', { class: 'muted' }, 'По правилам: четыре кубика к6, три наибольших складываются, и так шесть раз. Впишите, что получилось, — от 3 до 18.')] : null,
+        w.method === 'array' ? el('button', { class: 'mini wide', type: 'button', onclick: () => { setRec(); draw(); } }, 'Расставить как советуют: ' + c.name.toLowerCase()) : null,
+        w.method === 'points' ? el('button', { class: 'mini wide', type: 'button', onclick: () => { setRec(); draw(); } }, 'Раскидать за меня: ' + c.name.toLowerCase()) : null,
         el('div', { class: 'wstat muted small' }, el('span', {}, 'Характеристика'), el('span', {}, 'Число'), el('span', {}, ''), el('span', {}, 'Итог')), rows),
       el('p', { class: 'muted small' }, 'Прибавки взяты с шага «Предыстория».'), err.node, nav(() => go(''))];
   }

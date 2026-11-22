@@ -386,3 +386,12 @@ select {
 .lvh { font-size: 16px; font-weight: 700; }
 .lvkv { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
 .lvval { font-weight: 600; text-align: right; }
+
+/* создание персонажа: покупка характеристик за очки */
+.wstat.pb { grid-template-columns: minmax(0, 1fr) 124px 24px 64px; }
+.wpb { display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; text-align: center; font-weight: 700; }
+.wpb button { height: 40px; border-radius: 10px; border: 1px solid var(--line); background: #262A34; color: var(--text); font-size: 20px; line-height: 1; }
+.wpb button:disabled { opacity: .35; }
+.wpbleft { display: flex; justify-content: space-between; align-items: baseline; font-size: 16px; }
+.wpbleft strong { color: var(--gold); font-size: 18px; }
+.choice.three button { font-size: 14px; padding: 0 4px; }
