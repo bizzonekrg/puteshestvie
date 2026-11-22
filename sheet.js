@@ -731,11 +731,12 @@ function tabMain(s, ro, editBtn) {
   });
   const weapons = [
     el('h2', {}, 'Оружие'),
-    s.weapons.map((w) => el('div', { class: 'card rowcard' },
-      el('div', { class: 'grow' }, el('div', { class: 'title' }, w.name), el('p', { class: 'muted' }, `Атака ${signed(w.bonus)}${w.dmg ? ' · урон ' + w.dmg : ''}`),
-        weaponNote(s, w) ? el('p', { class: 'muted small' }, weaponNote(s, w)) : null,
-        finesseTip(s, w) ? el('p', { class: 'small warn' }, finesseTip(s, w)) : null),
-      editBtn('Изменить', () => weaponForm(w, false)))),
+    s.weapons.map((w) => el('div', { class: 'card wcard' },
+      el('div', { class: 'rowin' },
+        el('div', { class: 'grow' }, el('div', { class: 'title' }, w.name), el('p', { class: 'muted' }, `Атака ${signed(w.bonus)}${w.dmg ? ' · урон ' + w.dmg : ''}`),
+          weaponNote(s, w) ? el('p', { class: 'muted small' }, weaponNote(s, w)) : null),
+        editBtn('Изменить', () => weaponForm(w, false))),
+      finesseTip(s, w) ? el('p', { class: 'small warn' }, finesseTip(s, w)) : null)),
     ro ? null : el('button', { class: 'btn dashed', type: 'button', onclick: () => weaponForm({ name: '', bonus: 0, dmg: '' }, true) }, '+ Добавить оружие'),
   ];
 
