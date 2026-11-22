@@ -1185,6 +1185,12 @@ function addItem(s, name, qty, note) {
 }
 
 // Записать один подарок в лист и вернуть текст сообщения для игрока
+// К кости урона дописываем модификатор характеристики: «1к4 колющий» → «1к4+3 колющий»
+function dmgWithMod(dmg, mod) {
+  if (!mod) return dmg;
+  return dmg.replace(/^(\s*\d+\s*[кkdд]\s*\d+)(?!\d|\s*[+\-−–])/i, (m, dice) => dice + signed(mod));
+}
+
 function applyGift(s, g) {
   if (g.kind === 'gold') {
     const k = COINS.some((x) => x[0] === g.coin) ? g.coin : 'gp';
@@ -1196,9 +1202,10 @@ function applyGift(s, g) {
   if (g.kind === 'weapon') {
     const ab = g.ability === 'dex' ? 'dex' : g.ability === 'str' ? 'str' : (modOf(s.stats.dex) > modOf(s.stats.str) ? 'dex' : 'str');
     const bonus = modOf(s.stats[ab]) + (toInt(s.prof, 0));
-    s.weapons.push({ name: g.name, bonus, dmg: g.dmg || '', note: [g.props, g.descr].filter(Boolean).join('. ') });
+    const dmg = dmgWithMod(g.dmg || '', modOf(s.stats[ab]));
+    s.weapons.push({ name: g.name, bonus, dmg, note: [g.props, g.descr].filter(Boolean).join('. ') });
     addItem(s, g.name, qty, '');
-    return { title: `${g.name}${count} — добавлено в «Оружие» и «Вещи»`, sub: `Атака ${signed(bonus)}${g.dmg ? ' · урон ' + g.dmg : ''}. Бонус атаки сайт посчитал сам, поправьте, если нужно.` };
+    return { title: `${g.name}${count} — добавлено в «Оружие» и «Вещи»`, sub: `Атака ${signed(bonus)}${dmg ? ' · урон ' + dmg : ''}. Атаку и урон сайт посчитал сам, поправьте, если нужно.` };
   }
   addItem(s, g.name, qty, g.descr || '');
   return { title: `${g.name}${count} — добавлено в «Вещи»`, sub: g.descr || '' };
