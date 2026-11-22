@@ -556,6 +556,13 @@ async function leaveCharacter() {
   if (back) back(); else route();
 }
 
+// «Мастерство» оружия работает только у классов с умением «Оружейное мастерство» — остальным его не показываем
+function weaponNote(s, w) {
+  const note = w.note || '';
+  if (/варвар|воин|паладин|следопыт|плут/i.test(s.cls || '')) return note;
+  return note.replace(/\s*(·\s*)?мастерство:.*$/i, '').trim();
+}
+
 function skillBonus(s, sk) { return modOf(s.stats[sk.stat]) + s.prof * (sk.prof || 0); }
 
 function renderChar() {
@@ -707,7 +714,7 @@ function tabMain(s, ro, editBtn) {
     el('h2', {}, 'Оружие'),
     s.weapons.map((w) => el('div', { class: 'card rowcard' },
       el('div', { class: 'grow' }, el('div', { class: 'title' }, w.name), el('p', { class: 'muted' }, `Атака ${signed(w.bonus)}${w.dmg ? ' · урон ' + w.dmg : ''}`),
-        w.note ? el('p', { class: 'muted small' }, w.note) : null),
+        weaponNote(s, w) ? el('p', { class: 'muted small' }, weaponNote(s, w)) : null),
       editBtn('Изменить', () => weaponForm(w, false)))),
     ro ? null : el('button', { class: 'btn dashed', type: 'button', onclick: () => weaponForm({ name: '', bonus: 0, dmg: '' }, true) }, '+ Добавить оружие'),
   ];
