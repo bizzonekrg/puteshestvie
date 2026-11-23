@@ -121,7 +121,8 @@ function showLogin(prefillPhone) {
       el('h1', {}, 'Отправиться в путешествие?'),
       el('p', { class: 'muted' }, 'Войдите, чтобы открыть своего персонажа')),
     form,
-    el('button', { class: 'btn link', type: 'button', onclick: () => showRegister() }, 'Нет аккаунта? Зарегистрироваться'));
+    el('button', { class: 'btn link', type: 'button', onclick: () => showRegister() }, 'Нет аккаунта? Зарегистрироваться'),
+    el('p', { class: 'muted2 center' }, '© 2026 Арман. Все права защищены.'));
 }
 
 function showRegister() {
