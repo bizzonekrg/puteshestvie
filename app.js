@@ -122,7 +122,7 @@ function showLogin(prefillPhone) {
       el('p', { class: 'muted' }, 'Войдите, чтобы открыть своего персонажа')),
     form,
     el('button', { class: 'btn link', type: 'button', onclick: () => showRegister() }, 'Нет аккаунта? Зарегистрироваться'),
-    el('p', { class: 'muted2 center' }, '© 2026 Арман. Все права защищены.'));
+    el('p', { class: 'muted2 center' }, '© 2026 BIZZONE. Все права защищены.'));
 }
 
 function showRegister() {
