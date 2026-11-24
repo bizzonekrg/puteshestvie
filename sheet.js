@@ -155,7 +155,10 @@ function lssBio(d) {
   const bg = get('background');
   const seen = new Set(bg.map((x) => x.replace(/^[^:]{0,30}:\s*/, '').slice(0, 60)));
   const fresh = (lines) => lines.filter((x) => !seen.has(x.replace(/^[^:]{0,30}:\s*/, '').slice(0, 60)));
+  const sub = d.subInfo || {};
+  const look = (k) => { const v = sub[k] && sub[k].value; return v === null || v === undefined ? '' : String(v).trim().slice(0, 80); };
   return {
+    age: look('age'), height: look('height'), weight: look('weight'), eyes: look('eyes'), skin: look('skin'), hair: look('hair'),
     bg: bg.join('\n'), personality: get('personality').join('\n'), ideals: get('ideals').join('\n'),
     bonds: get('bonds').join('\n'), flaws: get('flaws').join('\n'),
     notes: fresh(get('allies')).concat(fresh(get('quests'))).join('\n'),
@@ -515,13 +518,14 @@ async function openCharacter(profile, id, tab, back) {
     // языки нужны серверу для чата: если их ещё нет в листе, берём из строки «Знание языков»
     if (!Array.isArray(s.langs)) { s.langs = langsFromText(s.profText); changed(); }
     // «О персонаже»: у листов, загруженных раньше, достаём тексты из исходного файла один раз
-    if (!s.bio) {
-      s.bio = {};
+    if (!s.bio || s.bio.age === undefined) {
+      const had = s.bio || null;
+      s.bio = Object.assign({ age: '', height: '', weight: '', eyes: '', skin: '', hair: '' }, had || {});
       sb.from('characters').select('source_lss').eq('id', data.id).maybeSingle().then(({ data: row }) => {
         try {
           let d = row && row.source_lss && row.source_lss.data;
           if (typeof d === 'string') d = JSON.parse(d);
-          if (d && CH === opened) { s.bio = lssBio(d); changed(); }
+          if (d && CH === opened) { s.bio = Object.assign(lssBio(d), had || {}); changed(); }
         } catch (e) { /* исходного файла нет или он другого вида — карточка останется пустой */ }
       }, () => {});
     }
@@ -630,12 +634,15 @@ function bioCard(s, ro, editBtn) {
   const parts = [['Предыстория' + (s.background ? ': ' + s.background : ''), b.bg], ['Мировоззрение', s.alignment], ['Характер', b.personality],
     ['Идеалы', b.ideals], ['Привязанности', b.bonds], ['Слабости', b.flaws], ['Союзники, цели, заметки', b.notes]]
     .filter(([title, text], i) => String(text || '').trim() || (i === 0 && s.background));
+  const LOOK = [['age', 'Возраст'], ['height', 'Рост'], ['weight', 'Вес'], ['eyes', 'Глаза'], ['skin', 'Кожа'], ['hair', 'Волосы']];
+  const looks = LOOK.filter(([k]) => String(b[k] || '').trim());
   const open = CH && CH.bioOpen;
   const edit = () => openForm({
     title: 'О персонаже',
     fields: [
       { key: 'background', label: 'Предыстория (название)', value: s.background || '' },
       { key: 'alignment', label: 'Мировоззрение', value: s.alignment || '' },
+      ...LOOK.map(([k, label]) => ({ key: k, label, value: b[k] || '' })),
       { key: 'bg', label: 'Описание предыстории', area: true, value: b.bg || '' },
       { key: 'personality', label: 'Характер', area: true, value: b.personality || '' },
       { key: 'ideals', label: 'Идеалы', area: true, value: b.ideals || '' },
@@ -645,14 +652,15 @@ function bioCard(s, ro, editBtn) {
     ],
     onSave: (v) => {
       s.background = v.background.slice(0, 60); s.alignment = v.alignment.slice(0, 60);
-      s.bio = { bg: v.bg, personality: v.personality, ideals: v.ideals, bonds: v.bonds, flaws: v.flaws, notes: v.notes };
+      s.bio = { age: v.age, height: v.height, weight: v.weight, eyes: v.eyes, skin: v.skin, hair: v.hair, bg: v.bg, personality: v.personality, ideals: v.ideals, bonds: v.bonds, flaws: v.flaws, notes: v.notes };
       changed();
     },
   });
   return el('div', { class: 'card' },
     el('div', { class: 'cardhead' }, el('div', { class: 'title' }, 'О персонаже'), editBtn('Изм.', edit)),
     el('p', { class: 'muted' }, s.background ? 'Предыстория: ' + s.background : 'Предыстория не указана.'),
-    parts.length ? el('button', { class: 'mini wide', type: 'button', onclick: () => { CH.bioOpen = !CH.bioOpen; renderChar(); } }, open ? 'Скрыть' : 'Показать полностью') : null,
+    (parts.length || looks.length) ? el('button', { class: 'mini wide', type: 'button', onclick: () => { CH.bioOpen = !CH.bioOpen; renderChar(); } }, open ? 'Скрыть' : 'Показать полностью') : null,
+    open && looks.length ? el('div', { class: 'biopart' }, el('div', { class: 'label' }, 'Внешность'), looks.map(([k, label]) => el('div', { class: 'lvkv' }, el('span', { class: 'muted' }, label), el('span', { class: 'lvval' }, String(b[k]))))) : null,
     open ? parts.map(([title, text]) => el('div', { class: 'biopart' }, el('div', { class: 'label' }, title),
       String(text || '').split('\n').filter((t) => t.trim()).map((t) => el('p', {}, t)))) : null);
 }
