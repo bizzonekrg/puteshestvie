@@ -11,7 +11,7 @@
 <title>Отправиться в путешествие?</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Philosopher:wght@700&display=swap">
-<link rel="stylesheet" href="app.css?v=79">
+<link rel="stylesheet" href="app.css?v=80">
 </head>
 <body>
 <main id="app" class="screen">
@@ -20,7 +20,7 @@
 <noscript><p style="color:#EDEAE2;padding:24px">Для работы сайта включите JavaScript в браузере.</p></noscript>
 <script>
 // Проверка свежести: если на сервере версия новее той, что показал телефон, страница перезагружается сама.
-window.APP_VERSION = 79;
+window.APP_VERSION = 80;
 fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
   if (!j || !(j.v > window.APP_VERSION)) return;
   var tried = null;
@@ -30,20 +30,20 @@ fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) {
 }).catch(function () {});
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="catalog.js?v=79"></script>
-<script src="hints.js?v=79"></script>
-<script src="classes.js?v=79"></script>
-<script src="spellclasses.js?v=79"></script>
-<script src="components.js?v=79"></script>
-<script src="sheet.js?v=79"></script>
-<script src="levelup.js?v=79"></script>
-<script src="create.js?v=79"></script>
-<script src="groups.js?v=79"></script>
-<script src="chat.js?v=79"></script>
-<script src="timer.js?v=79"></script>
-<script src="guilds.js?v=79"></script>
-<script src="give.js?v=79"></script>
-<script src="finish.js?v=79"></script>
-<script src="app.js?v=79"></script>
+<script src="catalog.js?v=80"></script>
+<script src="hints.js?v=80"></script>
+<script src="classes.js?v=80"></script>
+<script src="spellclasses.js?v=80"></script>
+<script src="components.js?v=80"></script>
+<script src="sheet.js?v=80"></script>
+<script src="levelup.js?v=80"></script>
+<script src="create.js?v=80"></script>
+<script src="groups.js?v=80"></script>
+<script src="chat.js?v=80"></script>
+<script src="timer.js?v=80"></script>
+<script src="guilds.js?v=80"></script>
+<script src="give.js?v=80"></script>
+<script src="finish.js?v=80"></script>
+<script src="app.js?v=80"></script>
 </body>
 </html>

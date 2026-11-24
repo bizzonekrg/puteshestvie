@@ -665,6 +665,21 @@ function bioCard(s, ro, editBtn) {
       String(text || '').split('\n').filter((t) => t.trim() && !/^Название\s*:/i.test(t)).map((t) => el('p', {}, t.replace(/^Описание\s*:\s*/i, ''))))) : null);
 }
 
+// Уровень, с которого умение работает: из таблицы класса, подкласса или из текста («С 5 уровня…»)
+function featureLevel(s, f) {
+  const key = hintKey(f.name), cd = classData(s.cls);
+  if (cd) {
+    const own = cd.features.find(([, n]) => hintKey(n) === key);
+    if (own) return own[0];
+    const col = cd.subs.find((x) => x.key === s.college);
+    const sub = col && col.features.find(([, n]) => hintKey(n) === key);
+    if (sub) return sub[0];
+  }
+  const m = /(?:^|[\s(.,;])(?:с|со|на|начиная с)\s+(\d{1,2})(?:-?го|-?м)?\s+уровн/i.exec(String(f.text || '').slice(0, 200));
+  if (m) { const n = toInt(m[1], 0); if (n >= 1 && n <= 20) return n; }
+  return null;
+}
+
 function skillBonus(s, sk) { return modOf(s.stats[sk.stat]) + s.prof * (sk.prof || 0); }
 
 function renderChar() {
@@ -1129,6 +1144,13 @@ function tabMagic(s, ro, editBtn) {
       return el('div', { class: 'card' },
         el('div', { class: 'title' }, f.name),
         college && (s.collegeAdded || []).some((n) => hintKey(n) === hintKey(f.name)) ? el('div', { class: 'muted2' }, cd.subNew.replace('Новое ', '')) : null,
+        (() => {
+          // с какого уровня умение работает и есть ли оно уже
+          const lv = featureLevel(s, f);
+          if (!lv) return null;
+          return lv > s.level ? el('div', { class: 'small warn' }, `Откроется на ${lv} уровне — сейчас ${s.level}. Пока не действует.`)
+            : el('div', { class: 'muted2' }, `Действует · с ${lv} уровня`);
+        })(),
         el('div', { class: 'btnrow' },
           hp.btn,
           f.text ? el('button', { class: opened ? 'mini solid' : 'mini', type: 'button', 'aria-expanded': String(opened), onclick: () => { if (opened) c.open.delete(i); else c.open.add(i); renderChar(); } }, 'Описание') : null,
