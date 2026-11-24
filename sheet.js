@@ -972,6 +972,7 @@ function tabMagic(s, ro, editBtn) {
       else if (h.own) box = el('div', { class: 'hint' }, h.text.split('\n').map((p) => el('p', { class: 'small' }, p)));
       else box = el('div', { class: 'hint' },
         h.meta ? el('p', { class: 'small meta' }, h.meta) : null,
+        h.comp ? el('p', { class: 'small' }, el('strong', {}, 'Компоненты. '), h.comp + '.' + (/материал/.test(h.comp) ? (h.compCost ? ' Нужен именно этот предмет: фокусировка его не заменяет.' : ' Материал заменяется магической фокусировкой или мешочком с компонентами.') : '')) : null,
         el('p', { class: 'small' }, el('strong', {}, 'Что делает. '), h.what),
         el('p', { class: 'small' }, el('strong', {}, 'Когда применять. '), h.when));
     }
