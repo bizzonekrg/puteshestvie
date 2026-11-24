@@ -662,7 +662,7 @@ function bioCard(s, ro, editBtn) {
     (parts.length || looks.length) ? el('button', { class: 'mini wide', type: 'button', onclick: () => { CH.bioOpen = !CH.bioOpen; renderChar(); } }, open ? 'Скрыть' : 'Показать полностью') : null,
     open && looks.length ? el('div', { class: 'biopart' }, el('div', { class: 'label' }, 'Внешность'), looks.map(([k, label]) => el('div', { class: 'lvkv' }, el('span', { class: 'muted' }, label), el('span', { class: 'lvval' }, String(b[k]))))) : null,
     open ? parts.map(([title, text]) => el('div', { class: 'biopart' }, el('div', { class: 'label' }, title),
-      String(text || '').split('\n').filter((t) => t.trim()).map((t) => el('p', {}, t)))) : null);
+      String(text || '').split('\n').filter((t) => t.trim() && !/^Название\s*:/i.test(t)).map((t) => el('p', {}, t.replace(/^Описание\s*:\s*/i, ''))))) : null);
 }
 
 function skillBonus(s, sk) { return modOf(s.stats[sk.stat]) + s.prof * (sk.prof || 0); }
