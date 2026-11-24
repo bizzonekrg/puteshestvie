@@ -1024,6 +1024,11 @@ function tabMagic(s, ro, editBtn) {
           const cdx = classData(s.cls), sub = cdx ? cdx.subs.find((k) => k.key === s.college) : null;
           if (given && sub) return el('div', { class: 'small muted2 nowrap' }, cdx.subNew.replace('Новое ', ''));
           return code && h && h.classes && !h.classes.includes(code) && !given ? el('div', { class: 'small warn' }, 'не из списка класса') : null;
+        })(), (() => {
+          // Когда ячейка не тратится: заговор или сотворение ритуалом
+          if (x.level === 0) return el('div', { class: 'small muted2' }, 'без ячейки · заговор');
+          const h = SPELL_HINT_INDEX.get(hintKey(x.name)) || (x.en ? SPELL_HINT_INDEX.get(hintKey(x.en)) : null);
+          return h && /ритуал/i.test(h.meta || '') ? el('div', { class: 'small muted2' }, 'ритуалом без ячейки · дольше на 10 минут') : null;
         })()), hp.btn, editBtn('Изм.', () => spellForm(x, false))),
         hp.box));
     }
