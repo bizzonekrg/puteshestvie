@@ -421,3 +421,7 @@ select {
 .timerbar.warn strong { color: var(--gold); }
 .timerbar.over { border-color: var(--danger); }
 .timerbar.over strong { color: var(--danger); }
+
+/* карточка «О персонаже» */
+.biopart { display: flex; flex-direction: column; gap: 4px; }
+.biopart p { margin: 0; font-size: 15px; line-height: 1.45; }

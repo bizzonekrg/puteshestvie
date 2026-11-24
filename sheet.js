@@ -130,6 +130,38 @@ function textField(d, key) {
   return f && f.value ? f.value.data : null;
 }
 
+// Текст поля LSS строками: поле бывает HTML-строкой (CharBox) или документом с абзацами (Long Story Short)
+function lssLines(data) {
+  if (!data) return [];
+  if (typeof data === 'string') return htmlLines(data);
+  const out = [];
+  const walk = (n) => {
+    if (!n || typeof n !== 'object') return '';
+    if (typeof n.text === 'string') return n.text;
+    return (Array.isArray(n.content) ? n.content : []).map(walk).join('');
+  };
+  const blocks = (n) => {
+    if (!n || typeof n !== 'object') return;
+    if (n.type === 'paragraph' || n.type === 'heading') { const t = walk(n).replace(/\s+/g, ' ').trim(); if (t) out.push(t); return; }
+    (Array.isArray(n.content) ? n.content : []).forEach(blocks);
+  };
+  blocks(data);
+  return out;
+}
+
+// «О персонаже» из файла: предыстория, характер, идеалы, привязанности, слабости, союзники и цели
+function lssBio(d) {
+  const get = (key) => lssLines(textField(d, key));
+  const bg = get('background');
+  const seen = new Set(bg.map((x) => x.replace(/^[^:]{0,30}:\s*/, '').slice(0, 60)));
+  const fresh = (lines) => lines.filter((x) => !seen.has(x.replace(/^[^:]{0,30}:\s*/, '').slice(0, 60)));
+  return {
+    bg: bg.join('\n'), personality: get('personality').join('\n'), ideals: get('ideals').join('\n'),
+    bonds: get('bonds').join('\n'), flaws: get('flaws').join('\n'),
+    notes: fresh(get('allies')).concat(fresh(get('quests'))).join('\n'),
+  };
+}
+
 // Главная функция: текст файла → { sheet, source, notes }
 function parseLss(fileText) {
   const bad = 'Не получилось прочитать файл. Нужен файл LSS из CharBox (заканчивается на .json).';
@@ -231,6 +263,7 @@ function parseLss(fileText) {
     species: String(val(info.race, '')),
     background: String(val(info.background, '')),
     alignment: String(val(info.alignment, '')),
+    bio: lssBio(d),
     level: clamp(toInt(val(info.level, 1), 1), 1, 20),
     xp: Math.max(0, toInt(val(info.experience, 0), 0)),
     portrait,
@@ -481,6 +514,17 @@ async function openCharacter(profile, id, tab, back) {
     // levelDone — уровень, для которого окно «Новый уровень» уже пройдено. Если уровень поднял ведущий наградой, окно откроется здесь.
     // языки нужны серверу для чата: если их ещё нет в листе, берём из строки «Знание языков»
     if (!Array.isArray(s.langs)) { s.langs = langsFromText(s.profText); changed(); }
+    // «О персонаже»: у листов, загруженных раньше, достаём тексты из исходного файла один раз
+    if (!s.bio) {
+      s.bio = {};
+      sb.from('characters').select('source_lss').eq('id', data.id).maybeSingle().then(({ data: row }) => {
+        try {
+          let d = row && row.source_lss && row.source_lss.data;
+          if (typeof d === 'string') d = JSON.parse(d);
+          if (d && CH === opened) { s.bio = lssBio(d); changed(); }
+        } catch (e) { /* исходного файла нет или он другого вида — карточка останется пустой */ }
+      }, () => {});
+    }
     if (!Number.isFinite(s.levelDone)) { s.levelDone = s.level; changed(); }
     else if (s.level > s.levelDone) openLevelUp(s, s.levelDone, s.level);
     else if (s.level < s.levelDone) { s.levelDone = s.level; changed(); }
@@ -578,6 +622,39 @@ function finesseTip(s, w) {
   const best = modOf(s.stats[ab]) + toInt(s.prof, 0);
   if (!(best > toInt(w.bonus, 0))) return '';
   return `Фехтовальное: по правилам можно бить от ${ab === 'dex' ? 'Ловкости' : 'Силы'} — атака была бы ${signed(best)}. Спросите у ведущего.`;
+}
+
+// Карточка «О персонаже»: предыстория, характер и прочее. Свёрнута, чтобы не удлинять лист.
+function bioCard(s, ro, editBtn) {
+  const b = s.bio || {};
+  const parts = [['Предыстория' + (s.background ? ': ' + s.background : ''), b.bg], ['Мировоззрение', s.alignment], ['Характер', b.personality],
+    ['Идеалы', b.ideals], ['Привязанности', b.bonds], ['Слабости', b.flaws], ['Союзники, цели, заметки', b.notes]]
+    .filter(([title, text], i) => String(text || '').trim() || (i === 0 && s.background));
+  const open = CH && CH.bioOpen;
+  const edit = () => openForm({
+    title: 'О персонаже',
+    fields: [
+      { key: 'background', label: 'Предыстория (название)', value: s.background || '' },
+      { key: 'alignment', label: 'Мировоззрение', value: s.alignment || '' },
+      { key: 'bg', label: 'Описание предыстории', area: true, value: b.bg || '' },
+      { key: 'personality', label: 'Характер', area: true, value: b.personality || '' },
+      { key: 'ideals', label: 'Идеалы', area: true, value: b.ideals || '' },
+      { key: 'bonds', label: 'Привязанности', area: true, value: b.bonds || '' },
+      { key: 'flaws', label: 'Слабости', area: true, value: b.flaws || '' },
+      { key: 'notes', label: 'Союзники, цели, заметки', area: true, value: b.notes || '' },
+    ],
+    onSave: (v) => {
+      s.background = v.background.slice(0, 60); s.alignment = v.alignment.slice(0, 60);
+      s.bio = { bg: v.bg, personality: v.personality, ideals: v.ideals, bonds: v.bonds, flaws: v.flaws, notes: v.notes };
+      changed();
+    },
+  });
+  return el('div', { class: 'card' },
+    el('div', { class: 'cardhead' }, el('div', { class: 'title' }, 'О персонаже'), editBtn('Изм.', edit)),
+    el('p', { class: 'muted' }, s.background ? 'Предыстория: ' + s.background : 'Предыстория не указана.'),
+    parts.length ? el('button', { class: 'mini wide', type: 'button', onclick: () => { CH.bioOpen = !CH.bioOpen; renderChar(); } }, open ? 'Скрыть' : 'Показать полностью') : null,
+    open ? parts.map(([title, text]) => el('div', { class: 'biopart' }, el('div', { class: 'label' }, title),
+      String(text || '').split('\n').filter((t) => t.trim()).map((t) => el('p', {}, t)))) : null);
 }
 
 function skillBonus(s, sk) { return modOf(s.stats[sk.stat]) + s.prof * (sk.prof || 0); }
@@ -798,6 +875,7 @@ function tabMain(s, ro, editBtn) {
       const lines = String(s.profText || '').split('\n').filter((t) => t.trim() && !/^\s*(?:знание\s+)?язык(?:и|ов)\s*:/i.test(t));
       return lines.length ? el('div', { class: 'card' }, el('div', { class: 'title' }, 'Владения'), lines.map((t) => el('p', { class: 'muted' }, t))) : null;
     })(),
+    bioCard(s, ro, editBtn),
     ro ? null : el('button', { class: 'btn outline', type: 'button', onclick: mainForm }, 'Изменить имя, уровень, КД'),
   ];
 }
