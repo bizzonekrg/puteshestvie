@@ -680,7 +680,7 @@ function featureLevel(s, f) {
   return null;
 }
 
-function skillBonus(s, sk) { return modOf(s.stats[sk.stat]) + s.prof * (sk.prof || 0); }
+function skillBonus(s, sk) { return formSkill(s, sk, modOf(s.stats[sk.stat]) + s.prof * (sk.prof || 0)); }
 
 function renderChar() {
   const c = CH;
@@ -759,7 +759,7 @@ function tabMain(s, ro, editBtn) {
       const cls = s.cls || '';
       const die = /варвар/i.test(cls) ? 12 : /воин|боец|паладин|следопыт|рейнджер/i.test(cls) ? 10 : /чародей|волшебник/i.test(cls) ? 6
         : /бард|жрец|клирик|друид|монах|плут|разбойник|колдун/i.test(cls) ? 8 : toInt(String(s.hitDie || '').replace(/\D/g, ''), 0);
-      if (ro || !die) return null;
+      if (ro || !die || s.form) return null;
       const con = modOf(s.stats.con), n = Math.min(20, Math.max(1, toInt(s.level, 1)));
       const at = (per) => Math.max(1, die + con) + (n - 1) * Math.max(1, per + con);
       const avg = at(die / 2 + 1), lo = at(1), hi = at(die);
@@ -779,7 +779,7 @@ function tabMain(s, ro, editBtn) {
     })());
 
   const tile = (label, value) => el('div', { class: 'tile' }, el('div', { class: 'label' }, label), el('div', { class: 'tval' }, value));
-  const row3 = el('div', { class: 'grid3' }, tile('КД', String(s.ac)), tile('Инициатива', signed(modOf(s.stats.dex))), tile('Скорость', `${s.speed} фт`));
+  const row3 = el('div', { class: 'grid3' }, tile('КД', String(s.ac)), tile('Инициатива', signed(modOf(s.stats.dex))), tile('Скорость', s.form ? s.form.beast.speed : `${s.speed} фт`));
 
   const numCard = (label, value, title, key, suffix) => el('div', { class: 'card tight' },
     el('div', { class: 'label' }, label),
@@ -813,7 +813,7 @@ function tabMain(s, ro, editBtn) {
   const profToggle = profToggleBtn();
   const saves = el('div', { class: 'card' }, el('div', { class: 'cardhead' }, el('div', { class: 'title' }, 'Спасброски'), profToggle),
     editing ? el('p', { class: 'muted small' }, 'Нажмите на строку, чтобы поставить или снять владение.') : null,
-    STAT_KEYS.map((k) => listRow(s.saves[k] ? 1 : 0, STAT_FULL[k], signed(modOf(s.stats[k]) + (s.saves[k] ? s.prof : 0)), () => { s.saves[k] = !s.saves[k]; changed(); })),
+    STAT_KEYS.map((k) => listRow(s.saves[k] ? 1 : 0, STAT_FULL[k], signed(formSave(s, k, modOf(s.stats[k]) + (s.saves[k] ? s.prof : 0))), () => { s.saves[k] = !s.saves[k]; changed(); })),
     el('p', { class: 'muted small' }, `● — владение. Бонус мастерства ${signed(s.prof)}`));
   const skills = el('div', { class: 'card' }, el('div', { class: 'cardhead' }, el('div', { class: 'title' }, 'Навыки'), profToggleBtn()),
     editing ? el('p', { class: 'muted small' }, 'Нажатие по кругу: нет владения → владение (●) → экспертиза (●●).') : null,
@@ -885,9 +885,11 @@ function tabMain(s, ro, editBtn) {
   });
 
   return [
-    hpCard, row3, row2,
+    formBanner(s, ro), hpCard, row3, row2,
+    wildCard(s, ro),
     el('div', { class: 'cardhead' }, el('h2', {}, 'Характеристики'), editBtn('Изм.', statsForm)),
     statsGrid, passives, saves, skills,
+    formAttacks(s),
     el('div', { class: 'card' },
       el('div', { class: 'cardhead' }, el('div', { class: 'title' }, 'Языки'), editBtn('Изм.', () => openLangsForm(s))),
       el('p', {}, (Array.isArray(s.langs) && s.langs.length ? s.langs : ['Общий']).join(', ')),
@@ -898,6 +900,7 @@ function tabMain(s, ro, editBtn) {
       const lines = String(s.profText || '').split('\n').filter((t) => t.trim() && !/^\s*(?:знание\s+)?язык(?:и|ов)\s*:/i.test(t));
       return lines.length ? el('div', { class: 'card' }, el('div', { class: 'title' }, 'Владения'), lines.map((t) => el('p', { class: 'muted' }, t))) : null;
     })(),
+    polymorphCard(s, ro),
     bioCard(s, ro, editBtn),
     ro ? null : el('button', { class: 'btn outline', type: 'button', onclick: mainForm }, 'Изменить имя, уровень, КД'),
   ];
@@ -1175,6 +1178,7 @@ function tabMagic(s, ro, editBtn) {
       el('button', { class: 'btn outline', type: 'button', onclick: () => {
         if (!window.confirm('Короткий отдых?')) return;
         if (isWarlock) sp.slots.forEach((x) => { x.used = 0; });
+        wildRest(s, false);
         changed();
       } }, 'Короткий отдых'),
       el('button', { class: 'btn outline', type: 'button', onclick: () => {
@@ -1182,10 +1186,12 @@ function tabMagic(s, ro, editBtn) {
         sp.slots.forEach((x) => { x.used = 0; });
         s.features.forEach((f) => { if (f.usesMax > 0) f.usesLeft = f.usesMax; });
         s.hp.cur = s.hp.max; s.hp.temp = 0;
+        wildRest(s, true);
         changed();
       } }, 'Долгий отдых')));
 
-  return [head, ruleLine, slots.length ? slots : el('p', { class: 'muted' }, 'Ячеек заклинаний нет.'), spellBlocks, features, rests,
+  return [s.form ? el('div', { class: 'card notice' }, el('div', { class: 'title' }, 'В облике зверя колдовать нельзя'), el('p', { class: 'muted small' }, s.form.kind === 'wild' ? 'Концентрация на уже наложенном заклинании сохраняется.' : 'Пока действует «Превращение», персонаж не может творить заклинания и говорить.')) : null,
+    head, ruleLine, slots.length ? slots : el('p', { class: 'muted' }, 'Ячеек заклинаний нет.'), spellBlocks, features, rests,
     el('p', { class: 'muted small' }, 'Подсказки краткие и написаны по правилам 2024 года. Точный текст заклинания смотрите в книге правил.')];
 }
 
